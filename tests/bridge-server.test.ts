@@ -203,6 +203,7 @@ describe("NebulaBridgeServer", () => {
       lastActiveAt: 2
     });
     await once(socket, "close");
+    await waitFor(() => server.getStatus().instances.length === 0);
     expect(server.getStatus().instances).toHaveLength(0);
   });
 
