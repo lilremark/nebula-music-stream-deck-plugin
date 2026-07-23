@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Nebula Music</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font:
+          13px system-ui,
+          sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 14px;
+        color: #eceef5;
+        background: #2d2d2d;
+      }
+      section {
+        margin: 0 0 16px;
+        padding: 12px;
+        border: 1px solid #4c4c4c;
+        border-radius: 7px;
+        background: #343434;
+      }
+      h2 {
+        margin: 0 0 10px;
+        font-size: 13px;
+      }
+      label {
+        display: grid;
+        gap: 5px;
+        margin: 10px 0;
+        color: #cfd3de;
+      }
+      input,
+      select,
+      button {
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 30px;
+        border: 1px solid #666;
+        border-radius: 4px;
+        color: #fff;
+        background: #222;
+      }
+      button {
+        cursor: pointer;
+        background: #6d3ed6;
+        border-color: #8b5cf6;
+      }
+      button.secondary {
+        background: #444;
+        border-color: #666;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 7px;
+      }
+      .row button {
+        width: auto;
+        padding: 0 10px;
+      }
+      .status {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #ef4444;
+      }
+      .dot.ok {
+        background: #22c55e;
+      }
+      .code {
+        margin: 10px 0;
+        padding: 8px;
+        text-align: center;
+        border-radius: 5px;
+        font:
+          700 24px ui-monospace,
+          monospace;
+        letter-spacing: 4px;
+        background: #202020;
+      }
+      .muted {
+        color: #aeb4c3;
+        font-size: 11px;
+      }
+      .hidden {
+        display: none;
+      }
+      .client {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 7px;
+        margin-top: 7px;
+      }
+    </style>
+  </head>
+  <body>
+    <section id="action-options" class="hidden">
+      <h2>Action</h2>
+      <label id="playlist-setting" class="hidden">
+        Playlist
+        <select id="playlist"></select>
+      </label>
+      <label id="playback-setting" class="hidden">
+        Multi Action behavior
+        <select id="desired-state">
+          <option value="toggle">Toggle</option>
+          <option value="play">Play</option>
+          <option value="pause">Pause</option>
+        </select>
+      </label>
+      <label id="seek-setting" class="hidden">
+        Seconds per seek tick
+        <input id="seek-step" type="number" min="1" max="60" value="5" />
+      </label>
+      <label id="volume-setting" class="hidden">
+        Volume percent per tick
+        <input id="volume-step" type="number" min="1" max="20" value="2" />
+      </label>
+    </section>
+
+    <section>
+      <h2>Browser bridge</h2>
+      <div class="status"><span id="dot" class="dot"></span><span id="status">Starting…</span></div>
+      <div id="pairing-code" class="code hidden"></div>
+      <button id="pair">Generate pairing code</button>
+      <p class="muted">
+        Enter this one-time code in Nebula Music → Settings → Stream Deck. It expires after five
+        minutes.
+      </p>
+      <label>
+        Loopback port
+        <div class="row">
+          <input id="port" type="number" min="1024" max="65525" value="37921" />
+          <button id="save-port" class="secondary">Apply</button>
+        </div>
+      </label>
+      <label>
+        Controlled tab
+        <select id="instance">
+          <option value="">Automatic</option>
+        </select>
+      </label>
+      <div id="clients"></div>
+    </section>
+
+    <script>
+      let socket;
+      let propertyInspectorUUID;
+      let actionUUID;
+      let settings = {};
+      let latestStatus = { instances: [], playlists: [] };
+
+      window.connectElgatoStreamDeckSocket = function (
+        port,
+        uuid,
+        registerEvent,
+        info,
+        actionInfo
+      ) {
+        propertyInspectorUUID = uuid;
+        const parsed = JSON.parse(actionInfo);
+        actionUUID = parsed.action;
+        settings = parsed.payload?.settings || {};
+        configureActionFields();
+        applySettings();
+
+        socket = new WebSocket(`ws://127.0.0.1:${port}`);
+        socket.addEventListener("open", () => {
+          socket.send(JSON.stringify({ event: registerEvent, uuid }));
+          sendPlugin({ type: "getStatus" });
+        });
+        socket.addEventListener("message", (event) => {
+          const message = JSON.parse(event.data);
+          if (message.event === "didReceiveSettings") {
+            settings = message.payload?.settings || {};
+            applySettings();
+          } else if (
+            message.event === "sendToPropertyInspector" &&
+            message.payload?.type === "status"
+          ) {
+            latestStatus = message.payload;
+            renderStatus();
+          }
+        });
+      };
+
+      function sendPlugin(payload) {
+        if (socket?.readyState !== WebSocket.OPEN) return;
+        socket.send(
+          JSON.stringify({
+            event: "sendToPlugin",
+            action: actionUUID,
+            context: propertyInspectorUUID,
+            payload
+          })
+        );
+      }
+
+      function saveSettings(patch) {
+        settings = { ...settings, ...patch };
+        socket.send(
+          JSON.stringify({
+            event: "setSettings",
+            context: propertyInspectorUUID,
+            payload: settings
+          })
+        );
+      }
+
+      function configureActionFields() {
+        const show = (id, visible) =>
+          document.getElementById(id).classList.toggle("hidden", !visible);
+        const playlist = actionUUID.endsWith(".playlist");
+        const playback = actionUUID.endsWith(".play-pause");
+        const seek = actionUUID.endsWith(".now-playing");
+        const volume = actionUUID.endsWith(".volume");
+        show("action-options", playlist || playback || seek || volume);
+        show("playlist-setting", playlist);
+        show("playback-setting", playback);
+        show("seek-setting", seek);
+        show("volume-setting", volume);
+      }
+
+      function applySettings() {
+        document.getElementById("desired-state").value = settings.desiredState || "toggle";
+        document.getElementById("seek-step").value = settings.seekStepSeconds || 5;
+        document.getElementById("volume-step").value = settings.volumeStepPercent || 2;
+        renderPlaylists();
+      }
+
+      function renderStatus() {
+        const connected = latestStatus.instances.some((item) => item.authenticated);
+        const statusText =
+          latestStatus.status === "port-conflict"
+            ? "Port unavailable"
+            : connected
+              ? "Connected"
+              : latestStatus.instances.length
+                ? "Pairing required"
+                : "Waiting for Nebula Music";
+        document.getElementById("status").textContent = statusText;
+        document.getElementById("dot").classList.toggle("ok", connected);
+        document.getElementById("port").value = latestStatus.port || 37921;
+        const code = document.getElementById("pairing-code");
+        code.textContent = latestStatus.pairingCode || "";
+        code.classList.toggle("hidden", !latestStatus.pairingCode);
+
+        const instance = document.getElementById("instance");
+        instance.replaceChildren(new Option("Automatic", ""));
+        for (const item of latestStatus.instances) {
+          const label = `${item.origin} — ${item.playing ? "playing" : item.visible ? "visible" : "idle"}`;
+          instance.add(new Option(label, item.sessionId));
+        }
+        instance.value = latestStatus.pinnedSessionId || "";
+
+        const clients = document.getElementById("clients");
+        clients.replaceChildren();
+        for (const item of latestStatus.instances.filter((entry) => entry.authenticated)) {
+          const row = document.createElement("div");
+          row.className = "client";
+          const name = document.createElement("span");
+          name.textContent = item.origin;
+          const unpair = document.createElement("button");
+          unpair.className = "secondary";
+          unpair.textContent = "Unpair";
+          unpair.addEventListener("click", () =>
+            sendPlugin({ type: "unpair", clientId: item.clientId })
+          );
+          row.append(name, unpair);
+          clients.append(row);
+        }
+        renderPlaylists();
+      }
+
+      function renderPlaylists() {
+        const select = document.getElementById("playlist");
+        select.replaceChildren(new Option("Choose a playlist…", ""));
+        for (const item of latestStatus.playlists || []) {
+          select.add(new Option(item.name, item.id));
+        }
+        select.value = settings.playlistId || "";
+      }
+
+      document
+        .getElementById("pair")
+        .addEventListener("click", () => sendPlugin({ type: "generatePairingCode" }));
+      document
+        .getElementById("save-port")
+        .addEventListener("click", () =>
+          sendPlugin({ type: "setPort", port: Number(document.getElementById("port").value) })
+        );
+      document
+        .getElementById("instance")
+        .addEventListener("change", (event) =>
+          sendPlugin({ type: "pinInstance", sessionId: event.target.value })
+        );
+      document.getElementById("playlist").addEventListener("change", (event) => {
+        const option = event.target.selectedOptions[0];
+        saveSettings({ playlistId: event.target.value, playlistName: option?.text || "" });
+      });
+      document
+        .getElementById("desired-state")
+        .addEventListener("change", (event) => saveSettings({ desiredState: event.target.value }));
+      document
+        .getElementById("seek-step")
+        .addEventListener("change", (event) =>
+          saveSettings({ seekStepSeconds: Number(event.target.value) })
+        );
+      document
+        .getElementById("volume-step")
+        .addEventListener("change", (event) =>
+          saveSettings({ volumeStepPercent: Number(event.target.value) })
+        );
+    </script>
+  </body>
+</html>

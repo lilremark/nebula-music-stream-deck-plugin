@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: node scripts/verify-version.mjs
+      - run: npm run check
+      - run: npm audit --audit-level=high
+      - run: npm run validate
+      - run: mkdir -p dist
+      - run: npx streamdeck pack com.lilremark.nebula-music.sdPlugin --output dist --no-update-check
+      - run: sha256sum dist/*.streamDeckPlugin > dist/SHA256SUMS
+      - uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
+        with:
+          subject-path: dist/*.streamDeckPlugin
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: stream-deck-plugin
+          path: dist/
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          prerelease: true
+          generate_release_notes: true
+          files: |
+            dist/*.streamDeckPlugin
+            dist/SHA256SUMS
