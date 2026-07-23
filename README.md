@@ -1,0 +1,67 @@
+# Nebula Music for Stream Deck
+
+A private Stream Deck and Stream Deck+ plugin for controlling the active
+[Nebula Music](https://github.com/lilremark/Nebula-Music) browser tab. It provides live
+artwork and playback progress, transport controls, seeking, volume, and playlist launching without
+turning the plugin into a second Subsonic client.
+
+## Requirements
+
+- Stream Deck 7.1 or newer
+- Windows 10+ or macOS 13+
+- A Nebula Music build with the opt-in Stream Deck bridge
+- Node.js 24 for development
+
+## Pairing
+
+1. Add the **Connection** action or select any Nebula Music action in Stream Deck.
+2. Generate a six-digit pairing code in its property inspector.
+3. In Nebula Music, enable the Stream Deck bridge and enter the code.
+4. Keep the default endpoint, `ws://127.0.0.1:37921/nebula/v1`, unless the property inspector shows
+   a fallback port.
+
+Codes are single-use, expire after five minutes, and are throttled per browser client and globally.
+The resulting 256-bit token is stored in Stream Deck global settings and Nebula's IndexedDB. After
+the initial exchange it never crosses the socket: reconnects prove possession through a single-use
+HMAC-SHA256 challenge. Connections are accepted only on IPv4 loopback and the claimed Nebula origin
+must match the browser's WebSocket Upgrade origin. Subsonic credentials, authenticated artwork
+URLs, and queues are never sent to this plugin.
+
+When several Nebula tabs are connected, selection priority is a manually pinned tab, a playing tab,
+a visible and recently active tab, then the newest connection.
+
+## Actions
+
+- **Now Playing:** artwork, track metadata, state and progress. Press to play/pause; on Stream Deck+
+  rotate to seek and tap/press to play/pause.
+- **Play / Pause:** two-state key with explicit states in Multi Actions.
+- **Previous / Next:** Nebula's native queue navigation behavior.
+- **Volume:** key percentage and mute toggle; on Stream Deck+ rotate by 2%, tap the strip to set an
+  absolute value, and press to mute/restore.
+- **Playlist:** choose a live playlist in the property inspector, then press to replace the queue and
+  play it.
+- **Playlist Browser:** rotate through playlists on Stream Deck+, then press or tap to play.
+- **Connection:** shows connection state and generates a pairing code when pressed.
+
+## Development
+
+```sh
+npm ci
+npm run check
+npm run validate
+npm run pack:dry
+```
+
+`npm run build` bundles the plugin to
+`com.lilremark.nebula-music.sdPlugin/bin/plugin.js` and generates the required PNG plugin icons.
+`npm run dev` watches TypeScript sources. The committed plugin directory is validated and packed by
+the official Stream Deck CLI.
+
+The browser-side contract is documented in [docs/protocol.md](docs/protocol.md). This repository is
+private and intentionally has no public license.
+
+## Releases
+
+Push a tag such as `v0.1.0`. GitHub Actions verifies that it matches `package.json` `0.1.0` and
+manifest `0.1.0.0`, runs all checks, then publishes a prerelease containing the
+`.streamDeckPlugin`, SHA-256 checksum, and build provenance.

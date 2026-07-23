@@ -1,0 +1,45 @@
+{
+  "name": "nebula-music-stream-deck-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Stream Deck controls for a Nebula Music browser session.",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "clean": "node scripts/clean.mjs",
+    "dev": "node scripts/build.mjs --watch",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "validate": "streamdeck validate com.lilremark.nebula-music.sdPlugin --no-update-check",
+    "pack:dry": "streamdeck pack com.lilremark.nebula-music.sdPlugin --dry-run --no-update-check",
+    "pack": "streamdeck pack com.lilremark.nebula-music.sdPlugin --no-update-check",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build"
+  },
+  "dependencies": {
+    "@elgato/streamdeck": "2.1.0",
+    "ws": "8.21.1",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@elgato/cli": "1.7.4",
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.13.3",
+    "@types/ws": "8.18.1",
+    "@vitest/coverage-v8": "4.1.0",
+    "esbuild": "0.28.1",
+    "eslint": "10.0.1",
+    "globals": "17.7.0",
+    "prettier": "3.9.6",
+    "sharp": "0.35.3",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.56.1",
+    "vitest": "4.1.0"
+  }
+}

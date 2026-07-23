@@ -1,0 +1,18 @@
+{
+  "$schema": "https://schemas.elgato.com/streamdeck/plugins/layout.json",
+  "id": "com.lilremark.nebula-music.now-playing",
+  "items": [
+    { "key": "artwork", "type": "pixmap", "rect": [3, 3, 62, 72] },
+    { "key": "title", "type": "text", "rect": [70, 4, 126, 22] },
+    { "key": "artist", "type": "text", "rect": [70, 29, 126, 19] },
+    { "key": "time", "type": "text", "rect": [70, 51, 126, 18] },
+    {
+      "key": "progress",
+      "type": "bar",
+      "rect": [4, 83, 192, 12],
+      "range": { "min": 0, "max": 100 },
+      "bar_fill_c": "#8b5cf6",
+      "value": 0
+    }
+  ]
+}

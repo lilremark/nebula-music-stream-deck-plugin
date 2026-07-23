@@ -1,0 +1,10 @@
+{
+  "$schema": "https://schemas.elgato.com/streamdeck/plugins/layout.json",
+  "id": "com.lilremark.nebula-music.playlist-browser",
+  "items": [
+    { "key": "icon", "type": "text", "rect": [5, 18, 40, 45] },
+    { "key": "title", "type": "text", "rect": [50, 7, 145, 22] },
+    { "key": "playlist", "type": "text", "rect": [50, 34, 145, 28] },
+    { "key": "position", "type": "text", "rect": [50, 68, 145, 18] }
+  ]
+}

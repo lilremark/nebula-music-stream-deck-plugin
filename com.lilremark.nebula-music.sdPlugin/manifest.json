@@ -1,0 +1,172 @@
+{
+  "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+  "Actions": [
+    {
+      "Controllers": ["Keypad", "Encoder"],
+      "Encoder": {
+        "Icon": "imgs/key",
+        "layout": "layouts/now-playing.json",
+        "StackColor": "#8b5cf6",
+        "TriggerDescription": {
+          "Push": "Play or pause",
+          "Rotate": "Seek",
+          "Touch": "Play or pause"
+        }
+      },
+      "Icon": "imgs/action",
+      "Name": "Now Playing",
+      "States": [
+        {
+          "Image": "imgs/key",
+          "ShowTitle": false
+        }
+      ],
+      "UUID": "com.lilremark.nebula-music.now-playing",
+      "UserTitleEnabled": false
+    },
+    {
+      "Controllers": ["Keypad"],
+      "DisableAutomaticStates": true,
+      "Icon": "imgs/action",
+      "Name": "Play / Pause",
+      "States": [
+        {
+          "Image": "imgs/play",
+          "Name": "Paused",
+          "ShowTitle": false
+        },
+        {
+          "Image": "imgs/pause",
+          "Name": "Playing",
+          "ShowTitle": false
+        }
+      ],
+      "UUID": "com.lilremark.nebula-music.play-pause",
+      "UserTitleEnabled": false
+    },
+    {
+      "Controllers": ["Keypad"],
+      "Icon": "imgs/action",
+      "Name": "Previous",
+      "States": [
+        {
+          "Image": "imgs/previous",
+          "ShowTitle": false
+        }
+      ],
+      "UUID": "com.lilremark.nebula-music.previous",
+      "UserTitleEnabled": false
+    },
+    {
+      "Controllers": ["Keypad"],
+      "Icon": "imgs/action",
+      "Name": "Next",
+      "States": [
+        {
+          "Image": "imgs/next",
+          "ShowTitle": false
+        }
+      ],
+      "UUID": "com.lilremark.nebula-music.next",
+      "UserTitleEnabled": false
+    },
+    {
+      "Controllers": ["Keypad", "Encoder"],
+      "Encoder": {
+        "Icon": "imgs/key",
+        "layout": "layouts/volume.json",
+        "StackColor": "#8b5cf6",
+        "TriggerDescription": {
+          "Push": "Mute or restore volume",
+          "Rotate": "Adjust volume",
+          "Touch": "Set volume"
+        }
+      },
+      "Icon": "imgs/action",
+      "Name": "Volume",
+      "States": [
+        {
+          "Image": "imgs/key",
+          "ShowTitle": false
+        }
+      ],
+      "UUID": "com.lilremark.nebula-music.volume",
+      "UserTitleEnabled": false
+    },
+    {
+      "Controllers": ["Keypad"],
+      "Icon": "imgs/action",
+      "Name": "Playlist",
+      "States": [
+        {
+          "Image": "imgs/key",
+          "ShowTitle": false
+        }
+      ],
+      "UUID": "com.lilremark.nebula-music.playlist",
+      "UserTitleEnabled": false
+    },
+    {
+      "Controllers": ["Encoder"],
+      "Encoder": {
+        "Icon": "imgs/key",
+        "layout": "layouts/playlist.json",
+        "StackColor": "#8b5cf6",
+        "TriggerDescription": {
+          "Push": "Play selected playlist",
+          "Rotate": "Choose playlist",
+          "Touch": "Play selected playlist"
+        }
+      },
+      "Icon": "imgs/action",
+      "Name": "Playlist Browser",
+      "States": [
+        {
+          "Image": "imgs/key",
+          "ShowTitle": false
+        }
+      ],
+      "UUID": "com.lilremark.nebula-music.playlist-browser",
+      "UserTitleEnabled": false
+    },
+    {
+      "Controllers": ["Keypad"],
+      "Icon": "imgs/action",
+      "Name": "Connection",
+      "States": [
+        {
+          "Image": "imgs/key",
+          "ShowTitle": false
+        }
+      ],
+      "UUID": "com.lilremark.nebula-music.connection",
+      "UserTitleEnabled": false
+    }
+  ],
+  "Author": "lilremark",
+  "Category": "Nebula Music",
+  "CodePath": "bin/plugin.js",
+  "Description": "Control the active Nebula Music browser session from Stream Deck and Stream Deck+.",
+  "Icon": "imgs/plugin",
+  "Name": "Nebula Music",
+  "Nodejs": {
+    "Version": "24"
+  },
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    },
+    {
+      "Platform": "mac",
+      "MinimumVersion": "13"
+    }
+  ],
+  "PropertyInspectorPath": "ui/property-inspector.html",
+  "SDKVersion": 3,
+  "Software": {
+    "MinimumVersion": "7.1"
+  },
+  "UUID": "com.lilremark.nebula-music",
+  "Version": "0.1.0.0"
+}
