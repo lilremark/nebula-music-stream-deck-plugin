@@ -60,6 +60,13 @@ the official Stream Deck CLI.
 The browser-side contract is documented in [docs/protocol.md](docs/protocol.md). This repository is
 private and intentionally has no public license.
 
+## Repository policy
+
+The repository stays private and does not use branch rulesets or branch-protection features that
+require a GitHub Pro subscription. Development happens on `codex/*` branches through pull requests,
+and maintainers verify that the `quality`, `smoke (windows-latest)`, and `smoke (macos-latest)` jobs
+pass before merging. See [docs/repository-policy.md](docs/repository-policy.md).
+
 ## Releases
 
 Push a tag such as `v0.1.0`. GitHub Actions verifies that it matches `package.json` `0.1.0` and
