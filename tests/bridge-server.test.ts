@@ -42,7 +42,8 @@ describe("NebulaBridgeServer", () => {
       origin: "https://music.example.test",
       nebulaVersion: "0.9.0",
       visible: true,
-      lastActiveAt: 100
+      lastActiveAt: 100,
+      capabilities: ["seekAbsolute", "progressVolume"]
     });
     const initialChallenge = await messages.next();
     expect(initialChallenge).toMatchObject({ type: "authChallenge" });
@@ -63,6 +64,8 @@ describe("NebulaBridgeServer", () => {
     });
     expect(await messages.next()).toMatchObject({ type: "pairingResult", ok: true });
     expect(await messages.next()).toMatchObject({ type: "requestSnapshot" });
+    expect(server.supportsActiveCapability("seekAbsolute")).toBe(true);
+    expect(server.supportsActiveCapability("futureCapability")).toBe(false);
 
     send(socket, {
       protocol: PROTOCOL,
@@ -120,9 +123,12 @@ describe("NebulaBridgeServer", () => {
       sessionId: "session",
       positionSeconds: 11,
       durationSeconds: 120,
-      playing: true
+      playing: true,
+      volume: 0.4,
+      muted: false
     });
     await waitFor(() => server.snapshot?.positionSeconds === 11);
+    expect(server.snapshot?.volume).toBe(0.4);
     send(socket, {
       protocol: PROTOCOL,
       type: "heartbeat",

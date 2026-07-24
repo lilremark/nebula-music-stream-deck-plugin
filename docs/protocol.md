@@ -11,8 +11,8 @@ nothing for approximately 45 seconds.
 ## Session lifecycle
 
 1. Browser sends `hello` with stable `clientId`, per-tab `sessionId`, origin, Nebula version,
-   visibility, and activity time. Plugin returns an `authChallenge` with a random 32-byte base64url
-   nonce.
+   visibility, activity time, and optional capabilities. Plugin returns an `authChallenge` with a
+   random 32-byte base64url nonce.
 2. A new client sends `pair` with the code shown by Stream Deck. The plugin returns `pairingResult`
    containing a random 32-byte base64url token exactly once, then rotates and sends a fresh
    `authChallenge`.
@@ -32,7 +32,8 @@ Every message contains `"protocol": "nebula-streamdeck/1"` and a discriminating 
 
 ## Browser messages
 
-- `hello`: `sessionId`, `clientId`, `origin`, `nebulaVersion`, `visible`, `lastActiveAt`
+- `hello`: `sessionId`, `clientId`, `origin`, `nebulaVersion`, `visible`, `lastActiveAt`, optional
+  `capabilities` (`seekAbsolute`, `progressVolume`)
 - `pair`: `clientId`, `code`
 - `authenticate`: `clientId`, `proof`
 - `revoke`: `clientId`
@@ -76,7 +77,14 @@ It must not contain the full queue, Subsonic credentials, server tokens, or auth
   - `next`
   - `setVolume { volume }`, normalized from 0 to 1
   - `seekRelative { seconds }`
+  - `seekAbsolute { seconds, trackId }`
   - `startPlaylist { playlistId }`
+
+Progress messages may include normalized volume and mute state so high-frequency controls can update
+hardware feedback without resending track artwork or playlist summaries. Absolute seeks include the
+expected track ID and fail safely if the active track changes before the browser applies the command.
+The plugin only sends `seekAbsolute` when the active browser advertises it; older v1 clients receive
+the existing `seekRelative` command instead.
 
 Command errors are `unauthorized`, `disconnected`, `stale_playlist`, `empty_playlist`,
 `playback_failed`, `invalid_command`, or `internal_error`.

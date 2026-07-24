@@ -10,7 +10,7 @@ export function nowPlayingSvg(snapshot?: NebulaSnapshot): string {
 
   const progress =
     snapshot.durationSeconds > 0
-      ? clamp(snapshot.positionSeconds / snapshot.durationSeconds, 0, 1) * 144
+      ? Math.round(clamp(snapshot.positionSeconds / snapshot.durationSeconds, 0, 1) * 144)
       : 0;
   const artwork = snapshot.track.artworkDataUrl
     ? `<image href="${escapeAttribute(snapshot.track.artworkDataUrl)}" x="0" y="0" width="144" height="144" preserveAspectRatio="xMidYMid slice"/>`
@@ -21,7 +21,7 @@ export function nowPlayingSvg(snapshot?: NebulaSnapshot): string {
   <g clip-path="url(#clip)">${artwork}<rect y="72" width="144" height="72" fill="#050711" fill-opacity=".86"/></g>
   <text x="8" y="95" font-family="Arial,sans-serif" font-weight="700" font-size="13" fill="white">${escapeText(truncate(snapshot.track.title, 18))}</text>
   <text x="8" y="113" font-family="Arial,sans-serif" font-size="11" fill="#d1d5db">${escapeText(truncate(snapshot.track.artist, 22))}</text>
-  <rect x="0" y="139" width="144" height="5" fill="#343b52"/><rect x="0" y="139" width="${progress.toFixed(2)}" height="5" fill="${ACCENT}"/>
+  <rect x="0" y="139" width="144" height="5" fill="#343b52"/><rect x="0" y="139" width="${progress}" height="5" fill="${ACCENT}"/>
   <circle cx="129" cy="91" r="10" fill="${ACCENT}"/><text x="129" y="96" text-anchor="middle" font-size="12" fill="white">${snapshot.playing ? "Ⅱ" : "▶"}</text>
   </svg>`;
 }

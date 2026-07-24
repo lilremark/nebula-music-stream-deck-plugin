@@ -22,11 +22,14 @@ const DEFAULT_SWEEP_INTERVAL_MS = 5_000;
 const DEFAULT_MAX_UNAUTHENTICATED = 16;
 const DEFAULT_MAX_UNAUTHENTICATED_PER_ORIGIN = 4;
 
+export type BridgeChangeKind = "status" | "state" | "progress";
+
 interface ClientConnection extends InstanceCandidate {
   socket: WebSocket;
   clientId: string;
   origin: string;
   nebulaVersion: string;
+  capabilities: ReadonlySet<string>;
   lastProgressAt: number;
   authNonce: string | undefined;
   lastMessageAt: number;
@@ -123,6 +126,10 @@ export class NebulaBridgeServer extends EventEmitter {
       ClientConnection | undefined;
   }
 
+  supportsActiveCapability(capability: string): boolean {
+    return this.active?.capabilities.has(capability) ?? false;
+  }
+
   async start(): Promise<number> {
     if (this.#server) return this.#listeningPort;
     for (let offset = 0; offset < this.#fallbackPorts; offset += 1) {
@@ -133,7 +140,7 @@ export class NebulaBridgeServer extends EventEmitter {
         this.#listeningPort = port;
         this.startSweeper();
         await this.#onPortSelected?.(port);
-        this.notify();
+        this.notify("status");
         return port;
       } catch (error) {
         if (!isAddressInUse(error)) throw error;
@@ -141,7 +148,7 @@ export class NebulaBridgeServer extends EventEmitter {
     }
     this.#status = "port-conflict";
     this.#listeningPort = this.#preferredPort;
-    this.notify();
+    this.notify("state");
     throw new Error("No available loopback port in the configured range");
   }
 
@@ -166,7 +173,7 @@ export class NebulaBridgeServer extends EventEmitter {
     this.#unauthenticatedTotal = 0;
     this.#unauthenticatedByOrigin.clear();
     this.#status = "stopped";
-    this.notify();
+    this.notify("state");
   }
 
   async restart(port: number): Promise<number> {
@@ -177,7 +184,7 @@ export class NebulaBridgeServer extends EventEmitter {
 
   setPinnedSession(sessionId?: string): void {
     this.#pinnedSessionId = sessionId || undefined;
-    this.notify();
+    this.notify("state");
   }
 
   getStatus(): BridgeStatus {
@@ -205,7 +212,7 @@ export class NebulaBridgeServer extends EventEmitter {
     for (const client of this.#connections) {
       if (client.clientId === clientId) client.socket.close(4001, "Unpaired");
     }
-    this.notify();
+    this.notify("state");
   }
 
   command(command: NebulaCommand): Promise<void> {
@@ -265,7 +272,7 @@ export class NebulaBridgeServer extends EventEmitter {
         server.removeAllListeners("error");
         server.on("error", () => {
           this.#status = "port-conflict";
-          this.notify();
+          this.notify("status");
         });
         this.#server = server;
         this.#webSocketServer = webSocketServer;
@@ -349,8 +356,9 @@ export class NebulaBridgeServer extends EventEmitter {
     socket.on("close", () => {
       clearTimeout(authDeadline);
       releaseUnauthenticated();
+      const activeBefore = this.active?.sessionId;
       if (client) this.#connections.delete(client);
-      this.notify();
+      this.notify(activeBefore !== this.active?.sessionId ? "state" : "status");
     });
     socket.on("error", () => {
       // Connection errors are surfaced as a disconnect status, never logged with private metadata.
@@ -375,6 +383,7 @@ export class NebulaBridgeServer extends EventEmitter {
         clientId: message.clientId,
         origin: message.origin,
         nebulaVersion: message.nebulaVersion,
+        capabilities: new Set(message.capabilities ?? []),
         authenticated: false,
         connectedAt: this.#now(),
         hello: { visible: message.visible, lastActiveAt: message.lastActiveAt },
@@ -384,7 +393,7 @@ export class NebulaBridgeServer extends EventEmitter {
       };
       this.#connections.add(next);
       this.rotateChallenge(next);
-      this.notify();
+      this.notify("status");
       return next;
     }
 
@@ -441,7 +450,7 @@ export class NebulaBridgeServer extends EventEmitter {
       } else {
         this.rotateChallenge(client);
       }
-      this.notify();
+      this.notify("state");
       return client;
     }
 
@@ -464,6 +473,7 @@ export class NebulaBridgeServer extends EventEmitter {
         socket.close(1008, "Session mismatch");
         return client;
       }
+      const activeBefore = this.active?.sessionId;
       const previousTrack = client.snapshot?.track;
       const incomingTrack = message.snapshot.track;
       const track =
@@ -476,25 +486,35 @@ export class NebulaBridgeServer extends EventEmitter {
       client.snapshot = { ...message.snapshot, track };
       client.hello.visible = message.snapshot.visible;
       client.hello.lastActiveAt = message.snapshot.lastActiveAt;
-      this.notify();
+      this.notify(
+        activeBefore !== this.active?.sessionId || this.active?.sessionId === client.sessionId
+          ? "state"
+          : "status"
+      );
     } else if (message.type === "progress") {
       if (message.sessionId !== client.sessionId) return client;
       const now = this.#now();
       if (client.snapshot && now - client.lastProgressAt >= 900) {
+        const activeBefore = this.active?.sessionId;
         client.snapshot = {
           ...client.snapshot,
           positionSeconds: message.positionSeconds,
           durationSeconds: message.durationSeconds,
-          playing: message.playing
+          playing: message.playing,
+          ...(message.volume !== undefined ? { volume: message.volume } : {}),
+          ...(message.muted !== undefined ? { muted: message.muted } : {})
         };
         client.lastProgressAt = now;
-        this.notify();
+        const activeAfter = this.active?.sessionId;
+        if (activeBefore !== activeAfter) this.notify("state");
+        else if (activeAfter === client.sessionId) this.notify("progress");
       }
     } else if (message.type === "heartbeat") {
       if (message.sessionId !== client.sessionId) return client;
+      const activeBefore = this.active?.sessionId;
       client.hello.visible = message.visible;
       client.hello.lastActiveAt = message.lastActiveAt;
-      this.notify();
+      this.notify(activeBefore !== this.active?.sessionId ? "state" : "status");
     } else if (message.type === "commandResult") {
       const pending = this.#pending.get(message.requestId);
       if (pending) {
@@ -537,8 +557,8 @@ export class NebulaBridgeServer extends EventEmitter {
     });
   }
 
-  private notify(): void {
-    this.emit("change", this.getStatus());
+  private notify(kind: BridgeChangeKind): void {
+    this.emit("change", kind, this.getStatus());
   }
 
   private startSweeper(): void {
