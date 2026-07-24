@@ -22,6 +22,7 @@
     "validate": "streamdeck validate com.lilremark.nebula-music.sdPlugin --no-update-check",
     "pack:dry": "streamdeck pack com.lilremark.nebula-music.sdPlugin --dry-run --no-update-check",
     "pack": "streamdeck pack com.lilremark.nebula-music.sdPlugin --no-update-check",
+    "preview:ui": "node scripts/render-ui-preview.mjs",
     "smoke:plugin": "node scripts/smoke-plugin.mjs",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build && npm run smoke:plugin"
   },

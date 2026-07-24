@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100" viewBox="0 0 200 100">
+  <defs>
+    <radialGradient id="cyan" cx="0" cy="0" r="1" gradientTransform="translate(18 8) rotate(34) scale(110 80)">
+      <stop stop-color="#06b6d4" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#06b6d4" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="violet" cx="0" cy="0" r="1" gradientTransform="translate(190 96) rotate(-146) scale(120 80)">
+      <stop stop-color="#8b5cf6" stop-opacity=".2"/>
+      <stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="200" height="100" fill="#0a0a0a"/>
+  <rect width="200" height="100" fill="url(#cyan)"/>
+  <rect width="200" height="100" fill="url(#violet)"/>
+</svg>

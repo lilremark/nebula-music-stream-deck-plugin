@@ -20,7 +20,15 @@ import {
   volumeFromTouch
 } from "./core/math.js";
 import type { NebulaCommand } from "./protocol/schema.js";
-import { formatTime, nowPlayingSvg, playlistSvg, statusSvg, volumeSvg } from "./render/svg.js";
+import {
+  dialArtworkFallbackSvg,
+  dialIconSvg,
+  formatTime,
+  nowPlayingSvg,
+  playlistSvg,
+  statusSvg,
+  volumeSvg
+} from "./render/svg.js";
 import type { NebulaService, OptimisticOperation, ServiceChangeKind } from "./service.js";
 
 type CommonSettings = {
@@ -277,12 +285,12 @@ export class NowPlayingAction extends ResponsiveAction {
     }
     if (target.isDial()) {
       await this.setFeedback(target, {
-        artwork: snapshot?.track?.artworkDataUrl ?? "",
-        title: snapshot?.track?.title ?? "Nebula Music",
-        artist: snapshot?.track?.artist ?? "Disconnected",
+        artwork: snapshot?.track?.artworkDataUrl ?? dialArtworkFallbackSvg(),
+        trackTitle: snapshot?.track?.title ?? "Nothing playing",
+        artist: snapshot?.track?.artist ?? "",
         time: snapshot
           ? `${formatTime(snapshot.positionSeconds)} / ${formatTime(snapshot.durationSeconds)}`
-          : "—",
+          : "",
         progress:
           snapshot && snapshot.durationSeconds > 0
             ? Math.round((snapshot.positionSeconds / snapshot.durationSeconds) * 100)
@@ -315,7 +323,7 @@ export class PlayPauseAction extends ResponsiveAction<PlaybackSettings> {
   protected override async refresh(target: Action<PlaybackSettings>): Promise<void> {
     if (!target.isKey()) return;
     await this.setState(target, this.service.snapshot?.playing ? 1 : 0);
-    await this.setTitle(target, this.service.snapshot ? "" : "Offline");
+    await this.setTitle(target, "");
   }
 }
 
@@ -327,7 +335,7 @@ abstract class TransportAction extends ResponsiveAction {
   }
 
   protected override async refresh(target: Action): Promise<void> {
-    if (target.isKey()) await this.setTitle(target, this.service.snapshot ? "" : "Offline");
+    if (target.isKey()) await this.setTitle(target, "");
   }
 }
 
@@ -379,9 +387,8 @@ export class VolumeAction extends ResponsiveAction {
     }
     if (target.isDial()) {
       await this.setFeedback(target, {
-        icon: snapshot?.muted ? "🔇" : "🔊",
-        title: "Volume",
-        value: snapshot ? `${Math.round(snapshot.volume * 100)}%` : "Offline",
+        icon: dialIconSvg("volume", !snapshot || snapshot.muted),
+        value: snapshot ? `${Math.round(snapshot.volume * 100)}%` : "—",
         volume: Math.round((snapshot?.volume ?? 0) * 100)
       });
     }
@@ -408,10 +415,7 @@ export class PlaylistAction extends ResponsiveAction<PlaylistSettings> {
   protected override async refresh(target: Action<PlaylistSettings>): Promise<void> {
     if (!target.isKey()) return;
     const settings = await target.getSettings<PlaylistSettings>();
-    await this.setImage(
-      target,
-      playlistSvg(settings.playlistName ?? "Choose playlist", Boolean(this.service.snapshot))
-    );
+    await this.setImage(target, playlistSvg(settings.playlistName ?? "Choose playlist"));
     await this.setTitle(target, "");
   }
 }
@@ -447,9 +451,8 @@ export class PlaylistBrowserAction extends ResponsiveAction {
     this.#selected.set(target.id, index);
     const playlist = playlists[index];
     await this.setFeedback(target, {
-      icon: "☷",
-      title: "Playlists",
-      playlist: playlist?.name ?? (this.service.snapshot ? "No playlists" : "Disconnected"),
+      icon: dialIconSvg("playlist"),
+      playlist: playlist?.name ?? "No playlists",
       position: playlist ? `${index + 1} / ${playlists.length}` : "—"
     });
   }
@@ -484,7 +487,7 @@ export class ConnectionAction extends ResponsiveAction {
           : status.pairingCode
             ? `Code ${status.pairingCode}`
             : "Press for code";
-    await this.setImage(target, statusSvg("Nebula Link", subtitle, connected ? "✓" : "⌁"));
+    await this.setImage(target, statusSvg("Nebula Link", subtitle, "link"));
     await this.setTitle(target, "");
   }
 

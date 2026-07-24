@@ -1,3 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
-  <path fill="#fff" d="M8 3v10.2a3.4 3.4 0 1 0 2 3.1V7l6-1.5v5.7a3.4 3.4 0 1 0 2 3.1V2z"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+  <g fill="none" stroke="#fff" stroke-linecap="round" stroke-width="2.6">
+    <path d="M4 10v4" opacity=".5"/>
+    <path d="M8 7v10" opacity=".75"/>
+    <path d="M12 3v18"/>
+    <path d="M16 7v10" opacity=".75"/>
+    <path d="M20 10v4" opacity=".5"/>
+  </g>
 </svg>

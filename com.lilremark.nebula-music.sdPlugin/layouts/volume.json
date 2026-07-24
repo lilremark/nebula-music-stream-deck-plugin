@@ -2,15 +2,34 @@
   "$schema": "https://schemas.elgato.com/streamdeck/plugins/layout.json",
   "id": "com.lilremark.nebula-music.volume",
   "items": [
-    { "key": "icon", "type": "text", "rect": [4, 18, 45, 45] },
-    { "key": "title", "type": "text", "rect": [53, 8, 143, 22] },
-    { "key": "value", "type": "text", "rect": [53, 34, 143, 30] },
+    { "key": "icon", "type": "pixmap", "rect": [8, 17, 42, 44] },
+    {
+      "key": "label",
+      "type": "text",
+      "rect": [59, 11, 135, 18],
+      "alignment": "left",
+      "color": "#a3a3a3",
+      "font": { "size": 10, "weight": 700 },
+      "value": "VOLUME"
+    },
+    {
+      "key": "value",
+      "type": "text",
+      "rect": [59, 33, 135, 34],
+      "alignment": "left",
+      "color": "#fafafa",
+      "font": { "size": 26, "weight": 700 }
+    },
     {
       "key": "volume",
       "type": "gbar",
-      "rect": [5, 77, 190, 18],
+      "rect": [8, 80, 184, 12],
       "range": { "min": 0, "max": 100 },
-      "bar_fill_c": "#8b5cf6",
+      "bar_bg_c": "#262626",
+      "bar_fill_c": "0:#06b6d4,1:#8b5cf6",
+      "bar_border_c": "#525252",
+      "bar_h": 5,
+      "border_w": 1,
       "value": 0
     }
   ]
