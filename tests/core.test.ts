@@ -379,24 +379,24 @@ describe("SVG rendering", () => {
     expect(svg).not.toContain('cx="126"');
     expect(formatTime(65.9)).toBe("1:05");
     expect(formatTime(Number.NaN)).toBe("0:00");
-    expect(
-      volumeSvg({
-        sessionId: "s",
-        clientId: "c",
-        origin: "https://example.test",
-        nebulaVersion: "1",
-        visible: true,
-        lastActiveAt: 1,
-        connectedAt: 1,
-        playing: false,
-        positionSeconds: 0,
-        durationSeconds: 0,
-        volume: 0,
-        muted: true,
-        track: null,
-        playlists: []
-      })
-    ).toContain("MUTED");
+    const mutedVolume = volumeSvg({
+      sessionId: "s",
+      clientId: "c",
+      origin: "https://example.test",
+      nebulaVersion: "1",
+      visible: true,
+      lastActiveAt: 1,
+      connectedAt: 1,
+      playing: false,
+      positionSeconds: 0,
+      durationSeconds: 0,
+      volume: 0,
+      muted: true,
+      track: null,
+      playlists: []
+    });
+    expect(mutedVolume).toContain("MUTED");
+    expect(mutedVolume).toContain('d="M2 3l20 18"');
     expect(playlistSvg("Playlist")).not.toContain("Disconnected");
     expect(dialIconSvg("volume")).toMatch(/^data:image\/svg\+xml;base64,/u);
     expect(dialIconSvg("playlist")).toMatch(/^data:image\/svg\+xml;base64,/u);

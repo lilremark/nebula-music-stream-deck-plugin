@@ -7,6 +7,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-07-24
+
+### Fixed
+
+- Draw a high-contrast blue slash through the Volume key speaker when muted so the hardware
+  state remains clear at key size.
+
 ## [1.1.2] - 2026-07-24
 
 ### Changed
@@ -76,7 +83,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Keep Subsonic credentials, authenticated artwork URLs, queues, pairing secrets, and media
   metadata out of plugin logs.
 
-[Unreleased]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.1.2...HEAD
+[Unreleased]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.1.3...HEAD
+[1.1.3]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.0.0...v1.1.0
