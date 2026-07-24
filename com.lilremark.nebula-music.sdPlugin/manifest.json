@@ -2,10 +2,7 @@
   "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
   "Actions": [
     {
-      "Controllers": [
-        "Keypad",
-        "Encoder"
-      ],
+      "Controllers": ["Keypad", "Encoder"],
       "Encoder": {
         "Icon": "imgs/key-now-playing",
         "background": "imgs/touch-background",
@@ -33,9 +30,7 @@
       "UserTitleEnabled": false
     },
     {
-      "Controllers": [
-        "Keypad"
-      ],
+      "Controllers": ["Keypad"],
       "DisableAutomaticStates": true,
       "Icon": "imgs/action-play-pause",
       "Name": "Play / Pause",
@@ -55,9 +50,7 @@
       "UserTitleEnabled": false
     },
     {
-      "Controllers": [
-        "Keypad"
-      ],
+      "Controllers": ["Keypad"],
       "Icon": "imgs/action-previous",
       "Name": "Previous",
       "States": [
@@ -70,9 +63,7 @@
       "UserTitleEnabled": false
     },
     {
-      "Controllers": [
-        "Keypad"
-      ],
+      "Controllers": ["Keypad"],
       "Icon": "imgs/action-next",
       "Name": "Next",
       "States": [
@@ -85,10 +76,7 @@
       "UserTitleEnabled": false
     },
     {
-      "Controllers": [
-        "Keypad",
-        "Encoder"
-      ],
+      "Controllers": ["Keypad", "Encoder"],
       "Encoder": {
         "Icon": "imgs/key-volume",
         "background": "imgs/touch-background",
@@ -112,9 +100,7 @@
       "UserTitleEnabled": false
     },
     {
-      "Controllers": [
-        "Encoder"
-      ],
+      "Controllers": ["Encoder"],
       "Encoder": {
         "Icon": "imgs/key-speed-pitch",
         "background": "imgs/touch-background",
@@ -137,9 +123,7 @@
       "UserTitleEnabled": false
     },
     {
-      "Controllers": [
-        "Keypad"
-      ],
+      "Controllers": ["Keypad"],
       "Icon": "imgs/action-playlist",
       "Name": "Playlist",
       "States": [
@@ -152,9 +136,7 @@
       "UserTitleEnabled": false
     },
     {
-      "Controllers": [
-        "Encoder"
-      ],
+      "Controllers": ["Encoder"],
       "Encoder": {
         "Icon": "imgs/key-playlist-browser",
         "background": "imgs/touch-background",
@@ -178,9 +160,7 @@
       "UserTitleEnabled": false
     },
     {
-      "Controllers": [
-        "Keypad"
-      ],
+      "Controllers": ["Keypad"],
       "Icon": "imgs/action-connection",
       "Name": "Connection",
       "States": [
