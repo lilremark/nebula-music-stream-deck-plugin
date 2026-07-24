@@ -43,7 +43,7 @@ describe("NebulaBridgeServer", () => {
       nebulaVersion: "0.9.0",
       visible: true,
       lastActiveAt: 100,
-      capabilities: ["seekAbsolute", "progressVolume"]
+      capabilities: ["seekAbsolute", "progressVolume", "playbackTuning"]
     });
     const initialChallenge = await messages.next();
     expect(initialChallenge).toMatchObject({ type: "authChallenge" });
@@ -65,6 +65,7 @@ describe("NebulaBridgeServer", () => {
     expect(await messages.next()).toMatchObject({ type: "pairingResult", ok: true });
     expect(await messages.next()).toMatchObject({ type: "requestSnapshot" });
     expect(server.supportsActiveCapability("seekAbsolute")).toBe(true);
+    expect(server.supportsActiveCapability("playbackTuning")).toBe(true);
     expect(server.supportsActiveCapability("futureCapability")).toBe(false);
 
     send(socket, {

@@ -24,6 +24,8 @@ import {
   clamp,
   seekPositionFromTouch,
   seekSeconds,
+  steppedPitch,
+  steppedPlaybackRate,
   steppedVolume,
   volumeFromTouch
 } from "./core/math.js";
@@ -51,6 +53,10 @@ type PlaybackSettings = CommonSettings & {
 type PlaylistSettings = CommonSettings & {
   playlistId?: string;
   playlistName?: string;
+};
+
+type PlaybackTuningSettings = CommonSettings & {
+  tuningTarget?: "speed" | "pitch" | "both";
 };
 
 interface QueuedCommand {
@@ -441,6 +447,59 @@ export class VolumeAction extends ResponsiveAction {
   }
 }
 
+@action({ UUID: "com.lilremark.nebula-music.speed-pitch" })
+export class SpeedPitchAction extends ResponsiveAction<PlaybackTuningSettings> {
+  override async onDialDown(event: DialDownEvent): Promise<void> {
+    if (!this.service.supportsActiveCapability("playbackTuning")) {
+      await event.action.showAlert();
+      return;
+    }
+    const enabled = !(this.service.snapshot?.pitchCorrection ?? true);
+    this.executeLatest(event.action, "pitch-correction", {
+      name: "setPitchCorrection",
+      enabled
+    });
+  }
+
+  override async onDialRotate(event: DialRotateEvent<PlaybackTuningSettings>): Promise<void> {
+    if (!this.service.supportsActiveCapability("playbackTuning")) {
+      await event.action.showAlert();
+      return;
+    }
+    const ticks = event.payload.ticks;
+    if (ticks === 0) return;
+    const target = event.payload.settings.tuningTarget ?? "speed";
+    const snapshot = this.service.snapshot;
+    if (target === "speed" || target === "both") {
+      this.executeLatest(event.action, "playback-rate", {
+        name: "setPlaybackRate",
+        playbackRate: steppedPlaybackRate(snapshot?.playbackRate ?? 1, ticks)
+      });
+    }
+    if (target === "pitch" || target === "both") {
+      this.executeLatest(event.action, "pitch", {
+        name: "setPitch",
+        pitchSemitones: steppedPitch(snapshot?.pitchSemitones ?? 0, ticks)
+      });
+    }
+  }
+
+  protected override async refresh(target: Action<PlaybackTuningSettings>): Promise<void> {
+    if (!target.isDial()) return;
+    const settings = await target.getSettings<PlaybackTuningSettings>();
+    const supported = this.service.supportsActiveCapability("playbackTuning");
+    const snapshot = this.service.snapshot;
+    await this.setFeedback(target, {
+      mode: supported ? (snapshot?.pitchCorrection === false ? "ANALOGUE" : "DIGITAL") : "UPDATE",
+      speed: supported ? `${(snapshot?.playbackRate ?? 1).toFixed(1)}×` : "—",
+      pitch: supported ? formatPitch(snapshot?.pitchSemitones ?? 0) : "—",
+      target: supported
+        ? `KNOB · ${(settings.tuningTarget ?? "speed").toUpperCase()}`
+        : "NEBULA REQUIRED"
+    });
+  }
+}
+
 @action({ UUID: "com.lilremark.nebula-music.playlist" })
 export class PlaylistAction extends ResponsiveAction<PlaylistSettings> {
   override onKeyDown(event: KeyDownEvent<PlaylistSettings>): void {
@@ -547,4 +606,8 @@ function mergeChangeKinds(left: ServiceChangeKind, right: ServiceChangeKind): Se
     state: 2
   };
   return priority[left] >= priority[right] ? left : right;
+}
+
+function formatPitch(semitones: number): string {
+  return `${semitones > 0 ? "+" : ""}${Math.round(semitones)} st`;
 }

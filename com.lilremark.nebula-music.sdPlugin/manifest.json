@@ -100,6 +100,29 @@
       "UserTitleEnabled": false
     },
     {
+      "Controllers": ["Encoder"],
+      "Encoder": {
+        "Icon": "imgs/key-speed-pitch",
+        "background": "imgs/touch-background",
+        "layout": "layouts/speed-pitch.json",
+        "StackColor": "#3b82c4",
+        "TriggerDescription": {
+          "Push": "Switch analogue or digital mode",
+          "Rotate": "Adjust speed, pitch, or both"
+        }
+      },
+      "Icon": "imgs/action-speed-pitch",
+      "Name": "Speed & Pitch",
+      "States": [
+        {
+          "Image": "imgs/key-speed-pitch",
+          "ShowTitle": false
+        }
+      ],
+      "UUID": "com.lilremark.nebula-music.speed-pitch",
+      "UserTitleEnabled": false
+    },
+    {
       "Controllers": ["Keypad"],
       "Icon": "imgs/action-playlist",
       "Name": "Playlist",
@@ -176,5 +199,5 @@
     "MinimumVersion": "7.1"
   },
   "UUID": "com.lilremark.nebula-music",
-  "Version": "1.0.0.0"
+  "Version": "1.1.0.0"
 }

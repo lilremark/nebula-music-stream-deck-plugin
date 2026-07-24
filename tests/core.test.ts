@@ -11,6 +11,8 @@ import {
   clamp,
   seekPositionFromTouch,
   seekSeconds,
+  steppedPitch,
+  steppedPlaybackRate,
   steppedVolume,
   volumeFromTouch
 } from "../src/core/math.js";
@@ -84,6 +86,10 @@ describe("control math", () => {
     expect(volumeFromTouch(100)).toBe(0.5);
     expect(volumeFromTouch(300)).toBe(1);
     expect(steppedVolume(0.5, 2)).toBeCloseTo(0.54);
+    expect(steppedPlaybackRate(1, 3)).toBe(1.3);
+    expect(steppedPlaybackRate(1.9, 5)).toBe(2);
+    expect(steppedPitch(0, -3)).toBe(-3);
+    expect(steppedPitch(10, 5)).toBe(12);
     expect(seekSeconds(-3)).toBe(-15);
     expect(seekSeconds(100_000)).toBe(86_400);
     expect(seekPositionFromTouch(4, 200)).toBe(0);
@@ -229,7 +235,7 @@ describe("protocol", () => {
         nebulaVersion: "1.2.3",
         visible: true,
         lastActiveAt: 10,
-        capabilities: ["seekAbsolute"]
+        capabilities: ["seekAbsolute", "playbackTuning"]
       })?.type
     ).toBe("hello");
     expect(
@@ -246,6 +252,16 @@ describe("protocol", () => {
       })
     ).toBeUndefined();
     expect(parseBrowserMessage({ protocol: "wrong", type: "heartbeat" })).toBeUndefined();
+    expect(commandSchema.safeParse({ name: "setPlaybackRate", playbackRate: 1.2 }).success).toBe(
+      true
+    );
+    expect(commandSchema.safeParse({ name: "setPitch", pitchSemitones: -4 }).success).toBe(true);
+    expect(commandSchema.safeParse({ name: "setPitchCorrection", enabled: false }).success).toBe(
+      true
+    );
+    expect(commandSchema.safeParse({ name: "setPlaybackRate", playbackRate: 2.1 }).success).toBe(
+      false
+    );
     expect(
       parseBrowserMessage({
         protocol: PROTOCOL,

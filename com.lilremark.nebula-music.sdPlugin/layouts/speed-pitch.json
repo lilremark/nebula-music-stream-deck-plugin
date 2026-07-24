@@ -1,0 +1,65 @@
+{
+  "$schema": "https://schemas.elgato.com/streamdeck/plugins/layout.json",
+  "id": "com.lilremark.nebula-music.speed-pitch",
+  "items": [
+    {
+      "key": "label",
+      "type": "text",
+      "rect": [8, 7, 86, 14],
+      "alignment": "left",
+      "color": "#737373",
+      "font": { "size": 9, "weight": 700 },
+      "value": "SPEED & PITCH"
+    },
+    {
+      "key": "mode",
+      "type": "text",
+      "rect": [100, 7, 92, 14],
+      "alignment": "right",
+      "color": "#3b82c4",
+      "font": { "size": 9, "weight": 700 }
+    },
+    {
+      "key": "speedLabel",
+      "type": "text",
+      "rect": [8, 31, 86, 12],
+      "alignment": "left",
+      "color": "#a3a3a3",
+      "font": { "size": 9, "weight": 600 },
+      "value": "SPEED"
+    },
+    {
+      "key": "pitchLabel",
+      "type": "text",
+      "rect": [106, 31, 86, 12],
+      "alignment": "right",
+      "color": "#a3a3a3",
+      "font": { "size": 9, "weight": 600 },
+      "value": "PITCH"
+    },
+    {
+      "key": "speed",
+      "type": "text",
+      "rect": [8, 44, 86, 27],
+      "alignment": "left",
+      "color": "#fafafa",
+      "font": { "size": 22, "weight": 700 }
+    },
+    {
+      "key": "pitch",
+      "type": "text",
+      "rect": [106, 44, 86, 27],
+      "alignment": "right",
+      "color": "#fafafa",
+      "font": { "size": 22, "weight": 700 }
+    },
+    {
+      "key": "target",
+      "type": "text",
+      "rect": [8, 80, 184, 12],
+      "alignment": "center",
+      "color": "#737373",
+      "font": { "size": 9, "weight": 700 }
+    }
+  ]
+}

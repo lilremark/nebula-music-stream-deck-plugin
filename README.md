@@ -42,6 +42,8 @@ a visible and recently active tab, then the newest connection.
 - **Previous / Next:** Nebula's native queue navigation behavior.
 - **Volume:** key percentage and mute toggle; on Stream Deck+ rotate by 2%, tap the strip to set an
   absolute value, and press to mute/restore.
+- **Speed & Pitch:** Stream Deck+ dial for speed, pitch, or both; press to switch between digital
+  independent control and analogue vinyl-style behavior.
 - **Playlist:** choose a live playlist in the property inspector, then press to replace the queue and
   play it.
 - **Playlist Browser:** rotate through playlists on Stream Deck+, then press or tap to play.
@@ -90,7 +92,7 @@ already exists.
 
 ## Releases
 
-Releases are tagged from commits already merged to `main`. A stable tag such as `v1.0.0` must
-match `package.json` `1.0.0` and manifest `1.0.0.0`. GitHub Actions runs the full validation suite,
+Releases are tagged from commits already merged to `main`. A stable tag such as `v1.1.0` must
+match `package.json` `1.1.0` and manifest `1.1.0.0`. GitHub Actions runs the full validation suite,
 packages the `.streamDeckPlugin`, generates a SHA-256 checksum and build-provenance attestation,
 then publishes the GitHub release. SemVer tags containing a hyphen are published as prereleases.
