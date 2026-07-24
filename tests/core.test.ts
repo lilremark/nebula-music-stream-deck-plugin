@@ -396,7 +396,7 @@ describe("SVG rendering", () => {
         track: null,
         playlists: []
       })
-    ).toContain("0%");
+    ).toContain("MUTED");
     expect(playlistSvg("Playlist")).not.toContain("Disconnected");
     expect(dialIconSvg("volume")).toMatch(/^data:image\/svg\+xml;base64,/u);
     expect(dialIconSvg("playlist")).toMatch(/^data:image\/svg\+xml;base64,/u);
