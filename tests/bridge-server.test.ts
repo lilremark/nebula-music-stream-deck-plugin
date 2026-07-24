@@ -321,16 +321,21 @@ describe("NebulaBridgeServer", () => {
     await waitFor(() => server.getStatus().activeSessionId === "first-session");
 
     const firstClosed = once(first.socket, "close");
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    send(second.socket, {
-      protocol: PROTOCOL,
-      type: "heartbeat",
-      sessionId: "second-session",
-      visible: true,
-      lastActiveAt: Date.now()
-    });
-    await firstClosed;
-    await waitFor(() => server.getStatus().activeSessionId === "second-session");
+    const keepSecondAlive = setInterval(() => {
+      send(second.socket, {
+        protocol: PROTOCOL,
+        type: "heartbeat",
+        sessionId: "second-session",
+        visible: true,
+        lastActiveAt: Date.now()
+      });
+    }, 10);
+    try {
+      await firstClosed;
+      await waitFor(() => server.getStatus().activeSessionId === "second-session");
+    } finally {
+      clearInterval(keepSecondAlive);
+    }
     second.socket.close();
   });
 
