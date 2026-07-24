@@ -445,6 +445,7 @@ export class VolumeAction extends ResponsiveAction {
     const current = this.service.snapshot?.volume ?? 0;
     const volume = current > 0 ? 0 : this.service.lastNonZeroVolume;
     this.executeLatest(target, "volume", { name: "setVolume", volume });
+    void this.requestRefresh(target, "state");
   }
 }
 

@@ -35,10 +35,12 @@ export function volumeSvg(snapshot?: NebulaSnapshot): string {
   const percent = snapshot ? Math.round(snapshot.volume * 100) : undefined;
   const muted = !snapshot || snapshot.muted || percent === 0;
   const ratio = percent === undefined ? 0 : clamp(percent / 100, 0, 1);
+  const value = percent === undefined ? "—" : muted ? "MUTED" : `${percent}%`;
+  const valueSize = muted && percent !== undefined ? 20 : 28;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
   <rect width="144" height="144" rx="12" fill="${BACKGROUND}"/>
   ${speakerMark(72, 57, muted, 1.7)}
-  <text x="72" y="112" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" font-weight="700" fill="${TEXT}">${percent === undefined ? "—" : `${percent}%`}</text>
+  <text x="72" y="112" text-anchor="middle" font-family="Arial,sans-serif" font-size="${valueSize}" font-weight="700" fill="${muted && percent !== undefined ? ACCENT : TEXT}">${value}</text>
   ${waveformProgress(ratio, 16, 126, 112, 10, 28)}
   </svg>`;
 }

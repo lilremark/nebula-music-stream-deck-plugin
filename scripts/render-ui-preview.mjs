@@ -57,6 +57,7 @@ const tiles = [
   ["Now Playing — marquee start", render.nowPlayingSvg(snapshot, 0)],
   ["Now Playing — marquee later", render.nowPlayingSvg(snapshot, 12)],
   ["Volume — active", render.volumeSvg(snapshot)],
+  ["Volume — muted", render.volumeSvg({ ...snapshot, volume: 0, muted: true })],
   ["Now Playing — idle", render.nowPlayingSvg()],
   ["Fixed Playlist", render.playlistSvg("Night Rotation")],
   ["Connection only", render.statusSvg("Nebula Link", "Code 384219", "link")]
@@ -65,7 +66,7 @@ const tileSize = 288;
 const tileWidth = 312;
 const tileHeight = 340;
 const canvasWidth = tileWidth * 3;
-const canvasHeight = tileHeight * 2;
+const canvasHeight = tileHeight * Math.ceil(tiles.length / 3);
 const composites = [];
 
 for (const [index, [label, svg]] of tiles.entries()) {

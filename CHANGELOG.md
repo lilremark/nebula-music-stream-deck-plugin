@@ -7,6 +7,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-07-24
+
+### Changed
+
+- Made the Volume key an explicit mute/restore toggle with immediate feedback.
+
+### Fixed
+
+- Show a clear blue `MUTED` state instead of `0%` when the Volume key is muted.
+
 ## [1.1.1] - 2026-07-24
 
 ### Changed
@@ -66,7 +76,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Keep Subsonic credentials, authenticated artwork URLs, queues, pairing secrets, and media
   metadata out of plugin logs.
 
-[Unreleased]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.1.2...HEAD
+[1.1.2]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/lilremark/nebula-music-stream-deck-plugin/releases/tag/v1.0.0
