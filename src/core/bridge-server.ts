@@ -143,7 +143,7 @@ export class NebulaBridgeServer extends EventEmitter {
         this.notify("status");
         return port;
       } catch (error) {
-        if (!isAddressInUse(error)) throw error;
+        if (!isAddressUnavailable(error)) throw error;
       }
     }
     this.#status = "port-conflict";
@@ -575,8 +575,12 @@ export class NebulaBridgeServer extends EventEmitter {
   }
 }
 
-function isAddressInUse(error: unknown): boolean {
-  return error instanceof Error && "code" in error && error.code === "EADDRINUSE";
+function isAddressUnavailable(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    "code" in error &&
+    (error.code === "EADDRINUSE" || error.code === "EACCES")
+  );
 }
 
 function rawDataLength(data: WebSocket.RawData): number {

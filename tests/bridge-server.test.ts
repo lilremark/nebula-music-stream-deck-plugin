@@ -18,7 +18,7 @@ describe("NebulaBridgeServer", () => {
     const { code } = pairing.issueCode();
     let persisted = 0;
     const server = new NebulaBridgeServer({
-      preferredPort: 41_000 + Math.floor(Math.random() * 10_000),
+      preferredPort: await getAvailablePort(),
       fallbackPorts: 20,
       pairing,
       persistPairedClients: () => {
@@ -163,7 +163,7 @@ describe("NebulaBridgeServer", () => {
   it("rejects invalid authentication and unauthenticated state", async () => {
     const pairing = new PairingManager();
     const server = new NebulaBridgeServer({
-      preferredPort: 51_000 + Math.floor(Math.random() * 5_000),
+      preferredPort: await getAvailablePort(),
       pairing,
       persistPairedClients: () => Promise.resolve()
     });
@@ -215,7 +215,7 @@ describe("NebulaBridgeServer", () => {
 
   it("rejects malformed and incompatible messages", async () => {
     const server = new NebulaBridgeServer({
-      preferredPort: 56_000 + Math.floor(Math.random() * 2_000),
+      preferredPort: await getAvailablePort(),
       pairing: new PairingManager(),
       persistPairedClients: () => Promise.resolve()
     });
@@ -242,7 +242,7 @@ describe("NebulaBridgeServer", () => {
 
   it("binds hello identity to Upgrade Origin and limits idle unauthenticated clients", async () => {
     const server = new NebulaBridgeServer({
-      preferredPort: 58_000 + Math.floor(Math.random() * 2_000),
+      preferredPort: await getAvailablePort(),
       pairing: new PairingManager(),
       persistPairedClients: () => Promise.resolve(),
       authDeadlineMs: 40,
@@ -291,7 +291,7 @@ describe("NebulaBridgeServer", () => {
     const firstToken = Buffer.alloc(32, 1).toString("base64url");
     const secondToken = Buffer.alloc(32, 2).toString("base64url");
     const server = new NebulaBridgeServer({
-      preferredPort: 60_000 + Math.floor(Math.random() * 2_000),
+      preferredPort: await getAvailablePort(),
       pairing: new PairingManager([
         { clientId: "first", token: firstToken, pairedAt: 1 },
         { clientId: "second", token: secondToken, pairedAt: 1 }
@@ -367,6 +367,20 @@ describe("NebulaBridgeServer", () => {
 
 function send(socket: WebSocket, value: unknown): void {
   socket.send(JSON.stringify(value));
+}
+
+async function getAvailablePort(): Promise<number> {
+  const probe = createServer();
+  await new Promise<void>((resolve, reject) => {
+    probe.once("error", reject);
+    probe.listen(0, "127.0.0.1", resolve);
+  });
+  const address = probe.address();
+  if (!address || typeof address === "string") throw new Error("Expected TCP address");
+  await new Promise<void>((resolve, reject) =>
+    probe.close((error) => (error ? reject(error) : resolve()))
+  );
+  return address.port;
 }
 
 async function connectAuthenticated(
