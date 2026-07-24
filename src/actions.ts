@@ -16,6 +16,7 @@ import { nowPlayingPressCommand } from "./core/interaction.js";
 import {
   DIAL_MARQUEE_LIMITS,
   KEY_MARQUEE_LIMITS,
+  keyMetadataTitle,
   marqueeText,
   metadataNeedsMarquee
 } from "./core/marquee.js";
@@ -31,7 +32,7 @@ import {
   dialArtworkFallbackSvg,
   dialIconSvg,
   formatTime,
-  nowPlayingSvg,
+  nowPlayingKeyImage,
   playlistSvg,
   statusSvg,
   volumeSvg
@@ -220,6 +221,7 @@ abstract class ResponsiveAction<
   private async renderCommandError(target: Action<T>, label: string): Promise<void> {
     if (target.isKey()) {
       await this.setImage(target, statusSvg("Command failed", label, "!"));
+      await this.setTitle(target, "");
       return;
     }
     if (target.isDial()) await this.setTitle(target, label);
@@ -250,7 +252,7 @@ export class NowPlayingAction extends ResponsiveAction {
         if (target.isKey() && !keyNeedsMarquee) return;
         void this.requestRefresh(target, "progress");
       });
-    }, 750);
+    }, 250);
     marqueeTimer.unref();
   }
 
@@ -298,7 +300,7 @@ export class NowPlayingAction extends ResponsiveAction {
     return kind === "state" || kind === "progress";
   }
 
-  protected override async refresh(target: Action, kind: ServiceChangeKind): Promise<void> {
+  protected override async refresh(target: Action): Promise<void> {
     const snapshot = this.service.snapshot;
     const trackId = snapshot?.track?.id;
     if (trackId !== this.#marqueeTrackId) {
@@ -306,12 +308,11 @@ export class NowPlayingAction extends ResponsiveAction {
       this.#marqueeFrame = 0;
     }
     if (target.isKey()) {
-      await this.setImage(
+      await this.setImage(target, nowPlayingKeyImage(snapshot));
+      await this.setTitle(
         target,
-        nowPlayingSvg(snapshot, this.#marqueeFrame),
-        kind === "progress" ? 1_000 : 0
+        keyMetadataTitle(snapshot?.track ?? undefined, this.#marqueeFrame)
       );
-      await this.setTitle(target, "");
       return;
     }
     if (target.isDial()) {

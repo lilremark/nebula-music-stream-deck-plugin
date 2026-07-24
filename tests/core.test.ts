@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import { changedFeedback, CommandDispatcher } from "../src/core/command-dispatcher.js";
 import { nowPlayingPressCommand } from "../src/core/interaction.js";
-import { DIAL_MARQUEE_LIMITS, marqueeText, metadataNeedsMarquee } from "../src/core/marquee.js";
+import {
+  DIAL_MARQUEE_LIMITS,
+  keyMetadataTitle,
+  marqueeText,
+  metadataNeedsMarquee
+} from "../src/core/marquee.js";
 import {
   clamp,
   seekPositionFromTouch,
@@ -22,6 +27,8 @@ import {
   dialArtworkFallbackSvg,
   dialIconSvg,
   formatTime,
+  keyArtworkFallbackSvg,
+  nowPlayingKeyImage,
   nowPlayingSvg,
   playlistSvg,
   volumeSvg
@@ -186,6 +193,17 @@ describe("metadata marquee", () => {
         DIAL_MARQUEE_LIMITS
       )
     ).toBe(false);
+    expect(
+      keyMetadataTitle(
+        {
+          title: "A title that is much too long",
+          artist: "Artist",
+          album: "Album"
+        },
+        1
+      )
+    ).toBe(" title that is muc\nAlbum\nArtist");
+    expect(keyMetadataTitle(undefined, 99)).toBe("Nothing playing");
   });
 });
 
@@ -336,5 +354,25 @@ describe("SVG rendering", () => {
     expect(dialIconSvg("volume")).toMatch(/^data:image\/svg\+xml;base64,/u);
     expect(dialIconSvg("playlist")).toMatch(/^data:image\/svg\+xml;base64,/u);
     expect(dialArtworkFallbackSvg()).toMatch(/^data:image\/svg\+xml;base64,/u);
+    expect(keyArtworkFallbackSvg()).toMatch(/^data:image\/svg\+xml;base64,/u);
+    const artwork = "data:image/png;base64,AA==";
+    expect(
+      nowPlayingKeyImage({
+        sessionId: "s",
+        clientId: "c",
+        origin: "https://example.test",
+        nebulaVersion: "1",
+        visible: true,
+        lastActiveAt: 1,
+        connectedAt: 1,
+        playing: true,
+        positionSeconds: 0,
+        durationSeconds: 1,
+        volume: 1,
+        muted: false,
+        track: { id: "t", title: "Title", artist: "Artist", artworkDataUrl: artwork },
+        playlists: []
+      })
+    ).toBe(artwork);
   });
 });

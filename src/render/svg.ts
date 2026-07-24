@@ -37,7 +37,6 @@ export function volumeSvg(snapshot?: NebulaSnapshot): string {
   const ratio = percent === undefined ? 0 : clamp(percent / 100, 0, 1);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
   <rect width="144" height="144" rx="12" fill="${BACKGROUND}"/>
-  <text x="8" y="14" font-family="Arial,sans-serif" font-size="8" font-weight="700" letter-spacing="1.2" fill="${MUTED}">VOLUME</text>
   ${speakerMark(72, 57, muted, 1.7)}
   <text x="72" y="112" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" font-weight="700" fill="${TEXT}">${percent === undefined ? "—" : `${percent}%`}</text>
   ${waveformProgress(ratio, 16, 126, 112, 10, 28)}
@@ -48,7 +47,6 @@ export function playlistSvg(name: string): string {
   const label = name || "Choose playlist";
   return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
   <rect width="144" height="144" rx="12" fill="${BACKGROUND}"/>
-  <text x="8" y="14" font-family="Arial,sans-serif" font-size="8" font-weight="700" letter-spacing="1.2" fill="${MUTED}">PLAYLIST</text>
   ${playlistMark(72, 58, 1.7)}
   <text x="72" y="111" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="${TEXT}">${escapeText(truncate(label, 20))}</text>
   <rect x="48" y="125" width="48" height="2" rx="1" fill="${ACCENT}"/>
@@ -62,7 +60,6 @@ export function statusSvg(title: string, subtitle: string, symbol: string): stri
       : `<text x="72" y="67" text-anchor="middle" font-family="Arial,sans-serif" font-size="27" font-weight="700" fill="${TEXT}">${escapeText(symbol)}</text>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
   <rect width="144" height="144" rx="12" fill="${BACKGROUND}"/>
-  <text x="8" y="14" font-family="Arial,sans-serif" font-size="8" font-weight="700" letter-spacing="1.2" fill="${MUTED}">CONNECTION</text>
   ${mark}
   <text x="72" y="105" text-anchor="middle" font-family="Arial,sans-serif" font-size="12.5" font-weight="700" fill="${TEXT}">${escapeText(truncate(title, 19))}</text>
   <text x="72" y="124" text-anchor="middle" font-family="Arial,sans-serif" font-size="9.5" font-weight="600" fill="${MUTED}">${escapeText(truncate(subtitle, 24))}</text>
@@ -82,6 +79,16 @@ export function dialArtworkFallbackSvg(): string {
   );
 }
 
+export function keyArtworkFallbackSvg(): string {
+  return svgDataUrl(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144"><rect width="144" height="144" rx="12" fill="${SURFACE}"/>${recordMark(72, 62, 1.8)}</svg>`
+  );
+}
+
+export function nowPlayingKeyImage(snapshot?: NebulaSnapshot): string {
+  return snapshot?.track?.artworkDataUrl ?? keyArtworkFallbackSvg();
+}
+
 export function formatTime(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
   const whole = Math.floor(seconds);
@@ -91,7 +98,6 @@ export function formatTime(seconds: number): string {
 function idleNowPlayingSvg(): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
   <rect width="144" height="144" rx="12" fill="${BACKGROUND}"/>
-  <text x="8" y="14" font-family="Arial,sans-serif" font-size="8" font-weight="700" letter-spacing="1.2" fill="${MUTED}">NOW PLAYING</text>
   ${recordMark(72, 63, 1.2)}
   <text x="72" y="116" text-anchor="middle" font-family="Arial,sans-serif" font-size="9.5" font-weight="700" letter-spacing="1.4" fill="${MUTED}">NOTHING PLAYING</text>
   </svg>`;
