@@ -1,6 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72">
   <rect width="72" height="72" rx="12" fill="#0a0a0a"/>
-  <text x="6" y="10" font-family="Arial,sans-serif" font-size="5" font-weight="700" letter-spacing=".7" fill="#a3a3a3">PLAYBACK</text>
   <circle cx="36" cy="38" r="22" fill="#f5f5f5"/>
   <g transform="translate(19 21) scale(1.4)" fill="#0a0a0a" stroke="#0a0a0a" stroke-linejoin="round" stroke-width="2">
     <rect x="14" y="3" width="5" height="18" rx="1"/>

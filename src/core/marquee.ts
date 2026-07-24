@@ -11,9 +11,9 @@ export interface MarqueeLimits {
 }
 
 export const KEY_MARQUEE_LIMITS: MarqueeLimits = {
-  title: 20,
-  artist: 25,
-  album: 25
+  title: 18,
+  artist: 20,
+  album: 20
 };
 
 export const DIAL_MARQUEE_LIMITS: MarqueeLimits = {
@@ -42,4 +42,16 @@ export function metadataNeedsMarquee(metadata: MarqueeMetadata, limits: MarqueeL
     Array.from(metadata.artist).length > limits.artist ||
     Array.from(metadata.album ?? "").length > limits.album
   );
+}
+
+export function keyMetadataTitle(metadata: MarqueeMetadata | undefined, frame: number): string {
+  if (!metadata) return "Nothing playing";
+
+  return [
+    marqueeText(metadata.title, KEY_MARQUEE_LIMITS.title, frame),
+    marqueeText(metadata.album ?? "", KEY_MARQUEE_LIMITS.album, frame),
+    marqueeText(metadata.artist, KEY_MARQUEE_LIMITS.artist, frame)
+  ]
+    .filter(Boolean)
+    .join("\n");
 }

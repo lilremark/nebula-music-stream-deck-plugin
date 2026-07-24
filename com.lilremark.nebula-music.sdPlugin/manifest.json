@@ -19,7 +19,11 @@
       "States": [
         {
           "Image": "imgs/key-now-playing",
-          "ShowTitle": false
+          "FontSize": 9,
+          "FontStyle": "Bold",
+          "ShowTitle": true,
+          "TitleAlignment": "bottom",
+          "TitleColor": "#FFFFFF"
         }
       ],
       "UUID": "com.lilremark.nebula-music.now-playing",

@@ -1,6 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72">
   <rect width="72" height="72" rx="12" fill="#0a0a0a"/>
-  <text x="6" y="10" font-family="Arial,sans-serif" font-size="5" font-weight="700" letter-spacing=".8" fill="#a3a3a3">NOW PLAYING</text>
   <g transform="translate(12 13) scale(2)" fill="none" stroke="#d4d4d4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
     <circle cx="12" cy="12" r="10"/>
     <path d="M6 12c0-1.7.7-3.2 1.8-4.2"/>
