@@ -1,4 +1,5 @@
 import { clamp } from "../core/math.js";
+import { KEY_MARQUEE_LIMITS, marqueeText } from "../core/marquee.js";
 import type { NebulaSnapshot } from "../protocol/schema.js";
 
 const BACKGROUND = "#0a0a0a";
@@ -6,30 +7,27 @@ const SURFACE = "#171717";
 const ELEVATED = "#262626";
 const TEXT = "#fafafa";
 const MUTED = "#a3a3a3";
-const SUBTLE = "#525252";
 const ACCENT = "#3b82c4";
 
-export function nowPlayingSvg(snapshot?: NebulaSnapshot): string {
+export function nowPlayingSvg(snapshot?: NebulaSnapshot, marqueeFrame = 0): string {
   if (!snapshot?.track) return idleNowPlayingSvg();
 
-  const ratio =
-    snapshot.durationSeconds > 0
-      ? clamp(snapshot.positionSeconds / snapshot.durationSeconds, 0, 1)
-      : 0;
   const artwork = snapshot.track.artworkDataUrl
-    ? `<image href="${escapeAttribute(snapshot.track.artworkDataUrl)}" x="31" y="20" width="82" height="82" preserveAspectRatio="xMidYMid slice"/>`
-    : `<rect x="31" y="20" width="82" height="82" fill="${SURFACE}"/>${recordMark(72, 61, 1)}`;
+    ? `<image href="${escapeAttribute(snapshot.track.artworkDataUrl)}" width="144" height="144" preserveAspectRatio="xMidYMid slice"/>`
+    : `<rect width="144" height="144" fill="${SURFACE}"/>${recordMark(72, 59, 1.35)}`;
+  const title = marqueeText(snapshot.track.title, KEY_MARQUEE_LIMITS.title, marqueeFrame);
+  const artist = marqueeText(snapshot.track.artist, KEY_MARQUEE_LIMITS.artist, marqueeFrame);
+  const album = marqueeText(snapshot.track.album ?? "", KEY_MARQUEE_LIMITS.album, marqueeFrame);
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
   <defs>
-    <clipPath id="art"><rect x="31" y="20" width="82" height="82" rx="9"/></clipPath>
+    <clipPath id="tile"><rect width="144" height="144" rx="12"/></clipPath>
+    <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><stop offset=".38" stop-color="#000" stop-opacity="0"/><stop offset=".7" stop-color="#000" stop-opacity=".78"/><stop offset="1" stop-color="#000" stop-opacity=".98"/></linearGradient>
   </defs>
-  <rect width="144" height="144" rx="12" fill="${BACKGROUND}"/>
-  <text x="8" y="13" font-family="Arial,sans-serif" font-size="7.5" font-weight="700" letter-spacing="1.1" fill="${MUTED}">NOW PLAYING</text>
-  <g clip-path="url(#art)">${artwork}</g>
-  <text x="72" y="117" text-anchor="middle" font-family="Arial,sans-serif" font-size="12.5" font-weight="700" fill="${TEXT}">${escapeText(truncate(snapshot.track.title, 20))}</text>
-  <text x="72" y="130" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" font-weight="500" fill="${MUTED}">${escapeText(truncate(snapshot.track.artist, 25))}</text>
-  ${waveformProgress(ratio, 8, 135, 128, 7, 34)}
+  <g clip-path="url(#tile)">${artwork}<rect width="144" height="144" fill="url(#shade)"/></g>
+  <text x="8" y="105" font-family="Arial,sans-serif" font-size="12.5" font-weight="700" fill="${TEXT}">${escapeText(title)}</text>
+  <text x="8" y="121" font-family="Arial,sans-serif" font-size="9.5" font-weight="500" fill="#d4d4d4">${escapeText(artist)}</text>
+  <text x="8" y="136" font-family="Arial,sans-serif" font-size="8.5" font-weight="500" fill="${MUTED}">${escapeText(album)}</text>
   </svg>`;
 }
 
@@ -40,7 +38,7 @@ export function volumeSvg(snapshot?: NebulaSnapshot): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
   <rect width="144" height="144" rx="12" fill="${BACKGROUND}"/>
   <text x="8" y="14" font-family="Arial,sans-serif" font-size="8" font-weight="700" letter-spacing="1.2" fill="${MUTED}">VOLUME</text>
-  ${speakerMark(72, 57, muted, 1.35)}
+  ${speakerMark(72, 57, muted, 1.7)}
   <text x="72" y="112" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" font-weight="700" fill="${TEXT}">${percent === undefined ? "—" : `${percent}%`}</text>
   ${waveformProgress(ratio, 16, 126, 112, 10, 28)}
   </svg>`;
@@ -51,7 +49,7 @@ export function playlistSvg(name: string): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
   <rect width="144" height="144" rx="12" fill="${BACKGROUND}"/>
   <text x="8" y="14" font-family="Arial,sans-serif" font-size="8" font-weight="700" letter-spacing="1.2" fill="${MUTED}">PLAYLIST</text>
-  ${playlistMark(72, 58, 1.2)}
+  ${playlistMark(72, 58, 1.7)}
   <text x="72" y="111" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="${TEXT}">${escapeText(truncate(label, 20))}</text>
   <rect x="48" y="125" width="48" height="2" rx="1" fill="${ACCENT}"/>
   </svg>`;
@@ -60,7 +58,7 @@ export function playlistSvg(name: string): string {
 export function statusSvg(title: string, subtitle: string, symbol: string): string {
   const mark =
     symbol === "link"
-      ? connectionMark(72, 57, 1.05)
+      ? connectionMark(72, 57, 1.55)
       : `<text x="72" y="67" text-anchor="middle" font-family="Arial,sans-serif" font-size="27" font-weight="700" fill="${TEXT}">${escapeText(symbol)}</text>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
   <rect width="144" height="144" rx="12" fill="${BACKGROUND}"/>
@@ -72,15 +70,15 @@ export function statusSvg(title: string, subtitle: string, symbol: string): stri
 }
 
 export function dialIconSvg(type: "volume" | "playlist", inactive = false): string {
-  const mark = type === "volume" ? speakerMark(24, 24, inactive, 0.8) : playlistMark(24, 24, 0.75);
+  const mark = type === "volume" ? speakerMark(24, 24, inactive, 1.35) : playlistMark(24, 24, 1.35);
   return svgDataUrl(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="${SURFACE}"/>${mark}<rect x="10" y="44" width="28" height="2" rx="1" fill="${ACCENT}"/></svg>`
+    `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">${mark}</svg>`
   );
 }
 
 export function dialArtworkFallbackSvg(): string {
   return svgDataUrl(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="70" viewBox="0 0 64 70"><rect width="64" height="70" rx="7" fill="${SURFACE}"/>${recordMark(32, 35, 0.75)}</svg>`
+    `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="${SURFACE}"/>${recordMark(50, 50, 1.25)}</svg>`
   );
 }
 
@@ -100,7 +98,7 @@ function idleNowPlayingSvg(): string {
 }
 
 function recordMark(cx: number, cy: number, scale: number): string {
-  return `<g transform="translate(${cx} ${cy}) scale(${scale})"><circle r="25" fill="${SURFACE}" stroke="${SUBTLE}" stroke-width="1.5"/><circle r="11" fill="none" stroke="${ELEVATED}" stroke-width="8"/><circle r="5" fill="${ACCENT}"/><circle r="2" fill="${BACKGROUND}"/></g>`;
+  return `<g transform="translate(${cx} ${cy}) scale(${scale}) translate(-12 -12)" fill="none" stroke="${MUTED}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M6 12c0-1.7.7-3.2 1.8-4.2"/><circle cx="12" cy="12" r="2" stroke="${ACCENT}"/><path d="M18 12c0 1.7-.7 3.2-1.8 4.2"/></g>`;
 }
 
 function waveformProgress(
@@ -126,17 +124,17 @@ function waveformProgress(
 
 function speakerMark(cx: number, cy: number, muted: boolean, scale: number): string {
   const sound = muted
-    ? `<path d="m14-6 12 12m0-12L14 6" stroke="${MUTED}"/>`
-    : `<path d="M12-6a9 9 0 0 1 0 12M17-11a16 16 0 0 1 0 22"/>`;
-  return `<g transform="translate(${cx} ${cy}) scale(${scale})" fill="none" stroke="${TEXT}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8"><path d="m-3-10-9 8h-7v10h7l9 8z"/>${sound}</g>`;
+    ? `<line x1="22" x2="16" y1="9" y2="15"/><line x1="16" x2="22" y1="9" y2="15"/>`
+    : `<path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/>`;
+  return `<g transform="translate(${cx} ${cy}) scale(${scale}) translate(-12 -12)" fill="none" stroke="${TEXT}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/>${sound}</g>`;
 }
 
 function playlistMark(cx: number, cy: number, scale: number): string {
-  return `<g transform="translate(${cx} ${cy}) scale(${scale})" fill="none" stroke="${TEXT}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8"><path d="M-20-12H3M-20-5H3M-20 2h16"/><path d="M8-14V9a7 7 0 1 1-5-6.7V-9l12-3" stroke="${ACCENT}"/></g>`;
+  return `<g transform="translate(${cx} ${cy}) scale(${scale}) translate(-12 -12)" fill="none" stroke="${TEXT}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M16 5H3"/><path d="M11 12H3"/><path d="M11 19H3"/><path d="M21 16V5"/><circle cx="18" cy="16" r="3"/></g>`;
 }
 
 function connectionMark(cx: number, cy: number, scale: number): string {
-  return `<g transform="translate(${cx} ${cy}) scale(${scale})" fill="none" stroke="${TEXT}" stroke-linecap="round" stroke-width="2.8"><path d="m-5 5 10-10" stroke="${ACCENT}"/><path d="M-8 8l-2 2a6 6 0 0 1-9-9l6-6a6 6 0 0 1 9 0M8-8l2-2a6 6 0 0 1 9 9l-6 6a6 6 0 0 1-9 0"/></g>`;
+  return `<g transform="translate(${cx} ${cy}) scale(${scale}) translate(-12 -12)" fill="none" stroke="${TEXT}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></g>`;
 }
 
 function escapeText(value: string): string {

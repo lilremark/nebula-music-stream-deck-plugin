@@ -2,17 +2,22 @@ import { mkdir } from "node:fs/promises";
 import { build } from "esbuild";
 import sharp from "sharp";
 
-const bundle = await build({
-  entryPoints: ["src/render/svg.ts"],
-  bundle: true,
-  format: "esm",
-  platform: "node",
-  write: false
-});
-const source = bundle.outputFiles[0].text;
-const render = await import(
-  `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`
-);
+async function importBundle(entryPoint) {
+  const bundle = await build({
+    entryPoints: [entryPoint],
+    bundle: true,
+    format: "esm",
+    platform: "node",
+    write: false
+  });
+  const source = bundle.outputFiles[0].text;
+  return import(`data:text/javascript;base64,${Buffer.from(source).toString("base64")}`);
+}
+
+const [render, marquee] = await Promise.all([
+  importBundle("src/render/svg.ts"),
+  importBundle("src/core/marquee.ts")
+]);
 
 const previewArtwork = `data:image/svg+xml;base64,${Buffer.from(
   `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
@@ -40,19 +45,19 @@ const snapshot = {
   muted: false,
   track: {
     id: "track",
-    title: "What The People Say",
-    artist: "Tha Dogg Pound",
-    album: "The Last Of Tha Pound",
+    title: "What The People Say — Remastered Version",
+    artist: "Tha Dogg Pound featuring a very long guest name",
+    album: "The Last Of Tha Pound (Deluxe Edition)",
     artworkDataUrl: previewArtwork
   },
   playlists: []
 };
 
 const tiles = [
-  ["Now Playing — idle", render.nowPlayingSvg()],
-  ["Now Playing — display only", render.nowPlayingSvg(snapshot)],
+  ["Now Playing — marquee start", render.nowPlayingSvg(snapshot, 0)],
+  ["Now Playing — marquee later", render.nowPlayingSvg(snapshot, 12)],
   ["Volume — active", render.volumeSvg(snapshot)],
-  ["Volume — idle", render.volumeSvg()],
+  ["Now Playing — idle", render.nowPlayingSvg()],
   ["Fixed Playlist", render.playlistSvg("Night Rotation")],
   ["Connection only", render.statusSvg("Nebula Link", "Code 384219", "link")]
 ];
@@ -92,4 +97,86 @@ await sharp({
   .png()
   .toFile("dist/ui-preview.png");
 
-console.log("Rendered dist/ui-preview.png");
+const artwork = await sharp(Buffer.from(previewArtwork.split(",")[1], "base64"))
+  .resize(100, 100)
+  .png()
+  .toBuffer();
+const dialTitle = escapeXml(marquee.marqueeText(snapshot.track.title, 13, 7));
+const dialArtist = escapeXml(marquee.marqueeText(snapshot.track.artist, 17, 7));
+const dialAlbum = escapeXml(marquee.marqueeText(snapshot.track.album, 17, 7));
+const dialMetadata = Buffer.from(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+    <rect width="100" height="100" fill="#0a0a0a"/>
+    <text x="8" y="21" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="#fafafa">${dialTitle}</text>
+    <text x="8" y="42" font-family="Arial,sans-serif" font-size="10" fill="#d4d4d4">${dialArtist}</text>
+    <text x="8" y="59" font-family="Arial,sans-serif" font-size="9" fill="#a3a3a3">${dialAlbum}</text>
+    <text x="8" y="78" font-family="Arial,sans-serif" font-size="9" fill="#a3a3a3">3:24 / 5:47</text>
+    <rect x="8" y="87" width="84" height="4" rx="2" fill="#262626"/>
+    <rect x="8" y="87" width="49" height="4" rx="2" fill="#3b82c4"/>
+  </svg>`
+);
+const nowPlayingDial = await sharp({
+  create: { width: 200, height: 100, channels: 4, background: "#0a0a0a" }
+})
+  .composite([
+    { input: artwork, left: 0, top: 0 },
+    { input: dialMetadata, left: 100, top: 0 }
+  ])
+  .png()
+  .toBuffer();
+
+const volumeDial = await renderSimpleDial({
+  icon: render.dialIconSvg("volume"),
+  label: "VOLUME",
+  value: "74%",
+  detail: "Rotate • press to mute",
+  progress: 0.74
+});
+const playlistDial = await renderSimpleDial({
+  icon: render.dialIconSvg("playlist"),
+  label: "PLAYLIST",
+  value: "Night Rotation",
+  detail: "3 / 12",
+  progress: 0
+});
+
+await sharp({
+  create: { width: 624, height: 100, channels: 4, background: "#232323" }
+})
+  .composite([
+    { input: nowPlayingDial, left: 0, top: 0 },
+    { input: volumeDial, left: 212, top: 0 },
+    { input: playlistDial, left: 424, top: 0 }
+  ])
+  .png()
+  .toFile("dist/dial-preview.png");
+
+console.log("Rendered dist/ui-preview.png and dist/dial-preview.png");
+
+async function renderSimpleDial({ icon, label, value, detail, progress }) {
+  const iconBuffer = Buffer.from(icon.split(",")[1], "base64");
+  const progressWidth = Math.round(128 * progress);
+  const text = Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100">
+      <rect width="200" height="100" fill="#0a0a0a"/>
+      <text x="64" y="24" font-family="Arial,sans-serif" font-size="10" font-weight="700" letter-spacing="1" fill="#a3a3a3">${escapeXml(label)}</text>
+      <text x="64" y="54" font-family="Arial,sans-serif" font-size="24" font-weight="700" fill="#fafafa">${escapeXml(value)}</text>
+      <text x="64" y="74" font-family="Arial,sans-serif" font-size="9" fill="#737373">${escapeXml(detail)}</text>
+      <rect x="64" y="86" width="128" height="4" rx="2" fill="#262626"/>
+      <rect x="64" y="86" width="${progressWidth}" height="4" rx="2" fill="#3b82c4"/>
+    </svg>`
+  );
+  return sharp(text)
+    .composite([{ input: iconBuffer, left: 8, top: 26 }])
+    .png()
+    .toBuffer();
+}
+
+function escapeXml(value) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&apos;");
+}

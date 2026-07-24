@@ -1,5 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72">
   <rect width="72" height="72" rx="12" fill="#0a0a0a"/>
   <text x="6" y="10" font-family="Arial,sans-serif" font-size="5" font-weight="700" letter-spacing=".7" fill="#a3a3a3">NEXT</text>
-  <path d="M49 25v26M22 25l22 13-22 13z" fill="none" stroke="#d4d4d4" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+  <g transform="translate(12 15) scale(2)" fill="none" stroke="#d4d4d4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <path d="M21 4v16"/>
+    <path d="M6.029 4.285A2 2 0 0 0 3 6v12a2 2 0 0 0 3.029 1.715l9.997-5.998a2 2 0 0 0 .003-3.432z"/>
+  </g>
 </svg>

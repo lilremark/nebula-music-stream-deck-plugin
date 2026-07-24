@@ -1,7 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72">
   <rect width="72" height="72" rx="12" fill="#0a0a0a"/>
   <text x="6" y="10" font-family="Arial,sans-serif" font-size="5" font-weight="700" letter-spacing=".7" fill="#a3a3a3">CONNECTION</text>
-  <path d="M28 45l-3 3a8 8 0 0 1-11-11l8-8a8 8 0 0 1 11 0M44 28l3-3a8 8 0 0 1 11 11l-8 8a8 8 0 0 1-11 0" fill="none" stroke="#fafafa" stroke-linecap="round" stroke-width="3"/>
-  <path d="m31 42 11-11" fill="none" stroke="#3b82c4" stroke-linecap="round" stroke-width="3"/>
+  <g transform="translate(12 14) scale(2)" fill="none" stroke="#fafafa" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+  </g>
   <circle cx="36" cy="61" r="2.5" fill="#3b82c4"/>
 </svg>
