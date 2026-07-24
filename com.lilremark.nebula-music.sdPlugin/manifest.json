@@ -10,7 +10,7 @@
         "TriggerDescription": {
           "Push": "Play or pause",
           "Rotate": "Seek",
-          "Touch": "Play or pause"
+          "Touch": "Scrub to position"
         }
       },
       "Icon": "imgs/action",

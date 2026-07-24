@@ -12,6 +12,21 @@ import {
 import { NebulaService } from "./service.js";
 
 const service = new NebulaService();
+let propertyInspectorVisible = false;
+let lastPropertyInspectorPayload = "";
+
+function sendPropertyInspectorStatus(force = false): void {
+  if (!propertyInspectorVisible) return;
+  const payload = {
+    type: "status",
+    ...service.getStatus(),
+    playlists: service.snapshot?.playlists ?? []
+  };
+  const serialized = JSON.stringify(payload);
+  if (!force && serialized === lastPropertyInspectorPayload) return;
+  lastPropertyInspectorPayload = serialized;
+  void streamDeck.ui.sendToPropertyInspector(payload);
+}
 
 streamDeck.actions.registerAction(new NowPlayingAction(service));
 streamDeck.actions.registerAction(new PlayPauseAction(service));
@@ -22,22 +37,26 @@ streamDeck.actions.registerAction(new PlaylistAction(service));
 streamDeck.actions.registerAction(new PlaylistBrowserAction(service));
 streamDeck.actions.registerAction(new ConnectionAction(service));
 
+streamDeck.ui.onDidAppear(() => {
+  propertyInspectorVisible = true;
+  lastPropertyInspectorPayload = "";
+  sendPropertyInspectorStatus(true);
+});
+
+streamDeck.ui.onDidDisappear(() => {
+  propertyInspectorVisible = false;
+  lastPropertyInspectorPayload = "";
+});
+
 streamDeck.ui.onSendToPlugin((event) => {
   if (!event.payload || typeof event.payload !== "object" || Array.isArray(event.payload)) return;
   const payload = event.payload as Record<string, unknown>;
   const type = payload.type;
   if (type === "getStatus") {
-    void streamDeck.ui.sendToPropertyInspector({
-      type: "status",
-      ...service.getStatus(),
-      playlists: service.snapshot?.playlists ?? []
-    });
+    sendPropertyInspectorStatus(true);
   } else if (type === "generatePairingCode") {
-    void streamDeck.ui.sendToPropertyInspector({
-      type: "status",
-      ...service.issuePairingCode(),
-      playlists: service.snapshot?.playlists ?? []
-    });
+    service.issuePairingCode();
+    sendPropertyInspectorStatus(true);
   } else if (type === "pinInstance") {
     const sessionId = typeof payload.sessionId === "string" ? payload.sessionId : undefined;
     void service.pinSession(sessionId);
@@ -48,13 +67,7 @@ streamDeck.ui.onSendToPlugin((event) => {
   }
 });
 
-service.on("change", () => {
-  void streamDeck.ui.sendToPropertyInspector({
-    type: "status",
-    ...service.getStatus(),
-    playlists: service.snapshot?.playlists ?? []
-  });
-});
+service.on("change", () => sendPropertyInspectorStatus());
 
 await streamDeck.connect();
 await service.initialize();

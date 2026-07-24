@@ -1,8 +1,15 @@
-import { describe, expect, it } from "vitest";
-import { clamp, seekSeconds, steppedVolume, volumeFromTouch } from "../src/core/math.js";
+import { describe, expect, it, vi } from "vitest";
+import { changedFeedback, CommandDispatcher } from "../src/core/command-dispatcher.js";
+import {
+  clamp,
+  seekPositionFromTouch,
+  seekSeconds,
+  steppedVolume,
+  volumeFromTouch
+} from "../src/core/math.js";
 import { commandErrorLabel, NebulaCommandError } from "../src/core/errors.js";
 import { selectActiveInstance, type InstanceCandidate } from "../src/core/selection.js";
-import { PROTOCOL, parseBrowserMessage } from "../src/protocol/schema.js";
+import { commandSchema, PROTOCOL, parseBrowserMessage } from "../src/protocol/schema.js";
 import { formatTime, nowPlayingSvg, playlistSvg, volumeSvg } from "../src/render/svg.js";
 
 const base: InstanceCandidate = {
@@ -57,6 +64,11 @@ describe("control math", () => {
     expect(steppedVolume(0.5, 2)).toBeCloseTo(0.54);
     expect(seekSeconds(-3)).toBe(-15);
     expect(seekSeconds(100_000)).toBe(86_400);
+    expect(seekPositionFromTouch(4, 200)).toBe(0);
+    expect(seekPositionFromTouch(100, 200)).toBe(100);
+    expect(seekPositionFromTouch(196, 200)).toBe(200);
+    expect(seekPositionFromTouch(300, 200)).toBe(200);
+    expect(seekPositionFromTouch(100, Number.NaN)).toBe(0);
     const error = new NebulaCommandError("empty_playlist", "No tracks");
     expect(error.name).toBe("NebulaCommandError");
     expect(error.code).toBe("empty_playlist");
@@ -91,6 +103,42 @@ describe("control math", () => {
   });
 });
 
+describe("control dispatch", () => {
+  it("keeps only the latest high-frequency command while one is in flight", async () => {
+    const completions: Array<() => void> = [];
+    const send = vi.fn((command: number) => {
+      void command;
+      return new Promise<void>((resolve) => {
+        completions.push(resolve);
+      });
+    });
+    const onError = vi.fn();
+    const dispatcher = new CommandDispatcher(send);
+
+    dispatcher.dispatchLatest("volume", 1, onError);
+    dispatcher.dispatchLatest("volume", 2, onError);
+    dispatcher.dispatchLatest("volume", 3, onError);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenLastCalledWith(1);
+
+    completions.shift()?.();
+    await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(2));
+    expect(send).toHaveBeenLastCalledWith(3);
+    completions.shift()?.();
+    await Promise.resolve();
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("returns only changed feedback fields", () => {
+    expect(
+      changedFeedback(
+        { artwork: "large-data-url", title: "Song", progress: 10 },
+        { artwork: "large-data-url", title: "Song", progress: 11, time: "0:11" }
+      )
+    ).toEqual({ progress: 11, time: "0:11" });
+  });
+});
+
 describe("protocol", () => {
   it("accepts versioned hello messages and rejects invalid protocol data", () => {
     expect(
@@ -102,9 +150,23 @@ describe("protocol", () => {
         origin: "https://music.example.test",
         nebulaVersion: "1.2.3",
         visible: true,
-        lastActiveAt: 10
+        lastActiveAt: 10,
+        capabilities: ["seekAbsolute"]
       })?.type
     ).toBe("hello");
+    expect(
+      parseBrowserMessage({
+        protocol: PROTOCOL,
+        type: "hello",
+        sessionId: "session",
+        clientId: "client",
+        origin: "https://music.example.test",
+        nebulaVersion: "1.2.3",
+        visible: true,
+        lastActiveAt: 10,
+        capabilities: ["unknown"]
+      })
+    ).toBeUndefined();
     expect(parseBrowserMessage({ protocol: "wrong", type: "heartbeat" })).toBeUndefined();
     expect(
       parseBrowserMessage({
@@ -137,6 +199,25 @@ describe("protocol", () => {
         }
       })?.type
     ).toBe("state");
+    expect(
+      parseBrowserMessage({
+        protocol: PROTOCOL,
+        type: "progress",
+        sessionId: "s",
+        positionSeconds: 40,
+        durationSeconds: 120,
+        playing: true,
+        volume: 0.42,
+        muted: false
+      })
+    ).toMatchObject({ type: "progress", volume: 0.42, muted: false });
+    expect(
+      commandSchema.safeParse({
+        name: "seekAbsolute",
+        seconds: 60,
+        trackId: "track"
+      }).success
+    ).toBe(true);
   });
 });
 
@@ -166,7 +247,7 @@ describe("SVG rendering", () => {
       playlists: []
     });
     expect(svg).toContain("&lt;Danger &amp;");
-    expect(svg).toContain('width="36.00"');
+    expect(svg).toContain('width="36"');
     expect(formatTime(65.9)).toBe("1:05");
     expect(formatTime(Number.NaN)).toBe("0:00");
     expect(

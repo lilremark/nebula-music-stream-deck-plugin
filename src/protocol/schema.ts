@@ -5,6 +5,7 @@ export const PROTOCOL = "nebula-streamdeck/1" as const;
 const protocol = z.literal(PROTOCOL);
 const identifier = z.string().min(1).max(256);
 const cryptographicValue = z.string().regex(/^[A-Za-z0-9_-]{43}$/u);
+const capability = z.enum(["seekAbsolute", "progressVolume"]);
 
 export const trackSchema = z.object({
   id: identifier,
@@ -51,6 +52,11 @@ export const commandSchema = z.discriminatedUnion("name", [
     name: z.literal("seekRelative"),
     seconds: z.number().finite().min(-86_400).max(86_400)
   }),
+  z.object({
+    name: z.literal("seekAbsolute"),
+    seconds: z.number().finite().min(0).max(86_400),
+    trackId: identifier
+  }),
   z.object({ name: z.literal("startPlaylist"), playlistId: identifier })
 ]);
 
@@ -65,7 +71,8 @@ export const browserMessageSchema = z.discriminatedUnion("type", [
     origin: z.string().url().max(2048),
     nebulaVersion: z.string().max(64),
     visible: z.boolean(),
-    lastActiveAt: z.number().int().nonnegative()
+    lastActiveAt: z.number().int().nonnegative(),
+    capabilities: z.array(capability).max(16).optional()
   }),
   z.object({
     ...base,
@@ -87,7 +94,9 @@ export const browserMessageSchema = z.discriminatedUnion("type", [
     sessionId: identifier,
     positionSeconds: z.number().nonnegative(),
     durationSeconds: z.number().nonnegative(),
-    playing: z.boolean()
+    playing: z.boolean(),
+    volume: z.number().min(0).max(1).optional(),
+    muted: z.boolean().optional()
   }),
   z.object({
     ...base,
