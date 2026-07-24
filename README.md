@@ -60,6 +60,30 @@ the official Stream Deck CLI.
 The browser-side contract is documented in [docs/protocol.md](docs/protocol.md). This repository is
 private and intentionally has no public license.
 
+## Local installation
+
+With the Stream Deck desktop application installed and running, create a developer link and restart
+the plugin:
+
+```sh
+npm ci
+npm run install:local
+```
+
+The link points Stream Deck at this checkout, so subsequent `npm run build` commands update the
+local test installation. Use `npm run dev` while actively editing the plugin.
+
+To create a standalone installer instead, run:
+
+```sh
+npm ci
+npm run package:local
+```
+
+Then open `dist/com.lilremark.nebula-music.streamDeckPlugin` and approve the installation in Stream
+Deck. The `--force` packaging option makes the command repeatable when an older local package
+already exists.
+
 ## Releases
 
 Push a tag such as `v0.1.0`. GitHub Actions verifies that it matches `package.json` `0.1.0` and
