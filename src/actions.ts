@@ -12,6 +12,7 @@ import {
 } from "@elgato/streamdeck";
 import { changedFeedback, CommandDispatcher } from "./core/command-dispatcher.js";
 import { commandErrorLabel } from "./core/errors.js";
+import { nowPlayingPressCommand } from "./core/interaction.js";
 import {
   clamp,
   seekPositionFromTouch,
@@ -229,12 +230,9 @@ abstract class ResponsiveAction<
 
 @action({ UUID: "com.lilremark.nebula-music.now-playing" })
 export class NowPlayingAction extends ResponsiveAction {
-  override onKeyDown(event: KeyDownEvent): void {
-    this.execute(event.action, { name: "togglePlayback" });
-  }
-
   override onDialDown(event: DialDownEvent): void {
-    this.execute(event.action, { name: "togglePlayback" });
+    const command = nowPlayingPressCommand("dial");
+    if (command) this.execute(event.action, command);
   }
 
   override onDialRotate(event: DialRotateEvent<CommonSettings>): void {
@@ -288,6 +286,7 @@ export class NowPlayingAction extends ResponsiveAction {
         artwork: snapshot?.track?.artworkDataUrl ?? dialArtworkFallbackSvg(),
         trackTitle: snapshot?.track?.title ?? "Nothing playing",
         artist: snapshot?.track?.artist ?? "",
+        album: snapshot?.track?.album ?? "",
         time: snapshot
           ? `${formatTime(snapshot.positionSeconds)} / ${formatTime(snapshot.durationSeconds)}`
           : "",

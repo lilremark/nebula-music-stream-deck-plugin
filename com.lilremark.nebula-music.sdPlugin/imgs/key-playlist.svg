@@ -1,6 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72">
-  <defs><linearGradient id="g" gradientUnits="userSpaceOnUse" x1="10" y1="62" x2="62" y2="10"><stop stop-color="#06b6d4"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs>
   <rect width="72" height="72" rx="12" fill="#0a0a0a"/>
-  <circle cx="36" cy="36" r="26" fill="#171717" stroke="url(#g)" stroke-width="2"/>
-  <path d="M19 25h24M19 32h24M19 39h16M46 23v22a6 6 0 1 1-4-5.7V27l10-2.5" fill="none" stroke="#fafafa" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+  <text x="6" y="10" font-family="Arial,sans-serif" font-size="5" font-weight="700" letter-spacing=".8" fill="#a3a3a3">PLAYLIST</text>
+  <path d="M17 25h25M17 32h25M17 39h17" fill="none" stroke="#fafafa" stroke-linecap="round" stroke-width="3"/>
+  <path d="M47 22v23a6 6 0 1 1-4-5.7V27l11-3" fill="none" stroke="#3b82c4" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+  <rect x="24" y="59" width="24" height="2" rx="1" fill="#3b82c4"/>
 </svg>
