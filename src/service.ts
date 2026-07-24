@@ -206,11 +206,14 @@ export class NebulaService extends EventEmitter {
     const pairedClients = this.#server?.pairing.list() ?? this.#settings.pairedClients;
     const settings = {
       port: this.#settings.port,
-      pairedClients,
+      pairedClients: pairedClients.map(({ clientId, token, pairedAt }) => ({
+        clientId,
+        token,
+        pairedAt
+      })),
       ...(this.#settings.pinnedSessionId ? { pinnedSessionId: this.#settings.pinnedSessionId } : {})
     };
-    type GlobalSettings = Parameters<typeof streamDeck.settings.setGlobalSettings>[0];
-    await streamDeck.settings.setGlobalSettings(settings as unknown as GlobalSettings);
+    await streamDeck.settings.setGlobalSettings(settings);
   }
 
   private applyOptimistic(command: NebulaCommand): OptimisticOperation | undefined {
