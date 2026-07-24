@@ -6,6 +6,7 @@ import {
   type DidReceiveSettingsEvent,
   type KeyDownEvent,
   SingletonAction,
+  Target,
   type TouchTapEvent,
   type WillAppearEvent,
   type WillDisappearEvent
@@ -31,7 +32,14 @@ import {
   volumeFromTouch
 } from "./core/math.js";
 import type { NebulaCommand } from "./protocol/schema.js";
-import { formatTime, nowPlayingKeyImage, playlistSvg, statusSvg, volumeSvg } from "./render/svg.js";
+import {
+  formatTime,
+  nowPlayingKeyImage,
+  playlistSvg,
+  statusSvg,
+  volumeKeyState,
+  volumeSvg
+} from "./render/svg.js";
 import type { NebulaService, OptimisticOperation, ServiceChangeKind } from "./service.js";
 
 type CommonSettings = {
@@ -165,12 +173,22 @@ abstract class ResponsiveAction<
     );
   }
 
-  protected async setImage(target: Action<T>, image: string, minimumIntervalMs = 0): Promise<void> {
-    if (!target.isKey() || this.#images.get(target.id) === image) return;
-    if (Date.now() - (this.#imageUpdatedAt.get(target.id) ?? 0) < minimumIntervalMs) return;
-    await target.setImage(image);
-    this.#images.set(target.id, image);
-    this.#imageUpdatedAt.set(target.id, Date.now());
+  protected async setImage(
+    target: Action<T>,
+    image: string,
+    minimumIntervalMs = 0,
+    state?: 0 | 1
+  ): Promise<void> {
+    if (!target.isKey()) return;
+    const cacheKey = `${target.id}:${state ?? "all"}`;
+    if (this.#images.get(cacheKey) === image) return;
+    if (Date.now() - (this.#imageUpdatedAt.get(cacheKey) ?? 0) < minimumIntervalMs) return;
+    await target.setImage(image, {
+      target: Target.HardwareAndSoftware,
+      ...(state !== undefined ? { state } : {})
+    });
+    this.#images.set(cacheKey, image);
+    this.#imageUpdatedAt.set(cacheKey, Date.now());
   }
 
   protected async setTitle(target: Action<T>, title: string): Promise<void> {
@@ -234,8 +252,12 @@ abstract class ResponsiveAction<
   }
 
   private clearFeedbackCache(actionId: string): void {
-    this.#images.delete(actionId);
-    this.#imageUpdatedAt.delete(actionId);
+    for (const key of this.#images.keys()) {
+      if (key.startsWith(`${actionId}:`)) this.#images.delete(key);
+    }
+    for (const key of this.#imageUpdatedAt.keys()) {
+      if (key.startsWith(`${actionId}:`)) this.#imageUpdatedAt.delete(key);
+    }
     this.#titles.delete(actionId);
     this.#states.delete(actionId);
     this.#feedbackDispatcher.clear(actionId);
@@ -427,7 +449,9 @@ export class VolumeAction extends ResponsiveAction {
   protected override async refresh(target: Action, kind: ServiceChangeKind): Promise<void> {
     const snapshot = this.service.snapshot;
     if (target.isKey()) {
-      await this.setImage(target, volumeSvg(snapshot), kind === "progress" ? 1_000 : 0);
+      const state = volumeKeyState(snapshot);
+      await this.setState(target, state);
+      await this.setImage(target, volumeSvg(snapshot), kind === "progress" ? 1_000 : 0, state);
       await this.setTitle(target, "");
       return;
     }
