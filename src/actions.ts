@@ -14,6 +14,12 @@ import { changedFeedback, CommandDispatcher } from "./core/command-dispatcher.js
 import { commandErrorLabel } from "./core/errors.js";
 import { nowPlayingPressCommand } from "./core/interaction.js";
 import {
+  DIAL_MARQUEE_LIMITS,
+  KEY_MARQUEE_LIMITS,
+  marqueeText,
+  metadataNeedsMarquee
+} from "./core/marquee.js";
+import {
   clamp,
   seekPositionFromTouch,
   seekSeconds,
@@ -230,6 +236,24 @@ abstract class ResponsiveAction<
 
 @action({ UUID: "com.lilremark.nebula-music.now-playing" })
 export class NowPlayingAction extends ResponsiveAction {
+  #marqueeFrame = 0;
+  #marqueeTrackId: string | undefined;
+
+  constructor(service: NebulaService) {
+    super(service);
+    const marqueeTimer = setInterval(() => {
+      const track = service.snapshot?.track;
+      if (!track || !metadataNeedsMarquee(track, DIAL_MARQUEE_LIMITS)) return;
+      this.#marqueeFrame += 1;
+      const keyNeedsMarquee = metadataNeedsMarquee(track, KEY_MARQUEE_LIMITS);
+      this.actions.forEach((target) => {
+        if (target.isKey() && !keyNeedsMarquee) return;
+        void this.requestRefresh(target, "progress");
+      });
+    }, 750);
+    marqueeTimer.unref();
+  }
+
   override onDialDown(event: DialDownEvent): void {
     const command = nowPlayingPressCommand("dial");
     if (command) this.execute(event.action, command);
@@ -276,17 +300,33 @@ export class NowPlayingAction extends ResponsiveAction {
 
   protected override async refresh(target: Action, kind: ServiceChangeKind): Promise<void> {
     const snapshot = this.service.snapshot;
+    const trackId = snapshot?.track?.id;
+    if (trackId !== this.#marqueeTrackId) {
+      this.#marqueeTrackId = trackId;
+      this.#marqueeFrame = 0;
+    }
     if (target.isKey()) {
-      await this.setImage(target, nowPlayingSvg(snapshot), kind === "progress" ? 1_000 : 0);
+      await this.setImage(
+        target,
+        nowPlayingSvg(snapshot, this.#marqueeFrame),
+        kind === "progress" ? 1_000 : 0
+      );
       await this.setTitle(target, "");
       return;
     }
     if (target.isDial()) {
+      const track = snapshot?.track;
       await this.setFeedback(target, {
-        artwork: snapshot?.track?.artworkDataUrl ?? dialArtworkFallbackSvg(),
-        trackTitle: snapshot?.track?.title ?? "Nothing playing",
-        artist: snapshot?.track?.artist ?? "",
-        album: snapshot?.track?.album ?? "",
+        artwork: track?.artworkDataUrl ?? dialArtworkFallbackSvg(),
+        trackTitle: track
+          ? marqueeText(track.title, DIAL_MARQUEE_LIMITS.title, this.#marqueeFrame)
+          : "Nothing playing",
+        artist: track
+          ? marqueeText(track.artist, DIAL_MARQUEE_LIMITS.artist, this.#marqueeFrame)
+          : "",
+        album: track
+          ? marqueeText(track.album ?? "", DIAL_MARQUEE_LIMITS.album, this.#marqueeFrame)
+          : "",
         time: snapshot
           ? `${formatTime(snapshot.positionSeconds)} / ${formatTime(snapshot.durationSeconds)}`
           : "",

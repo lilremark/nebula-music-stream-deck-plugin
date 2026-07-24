@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { changedFeedback, CommandDispatcher } from "../src/core/command-dispatcher.js";
 import { nowPlayingPressCommand } from "../src/core/interaction.js";
+import { DIAL_MARQUEE_LIMITS, marqueeText, metadataNeedsMarquee } from "../src/core/marquee.js";
 import {
   clamp,
   seekPositionFromTouch,
@@ -160,6 +161,34 @@ describe("Now Playing interaction", () => {
   });
 });
 
+describe("metadata marquee", () => {
+  it("leaves short metadata alone and scrolls overflowing text", () => {
+    expect(marqueeText("Short title", 16, 20)).toBe("Short title");
+    expect(marqueeText("A title that is much too long", 16, 0)).toBe("A title that is ");
+    expect(marqueeText("A title that is much too long", 16, 1)).toBe(" title that is m");
+    expect(
+      metadataNeedsMarquee(
+        {
+          title: "A title that is much too long",
+          artist: "Artist",
+          album: "Album"
+        },
+        DIAL_MARQUEE_LIMITS
+      )
+    ).toBe(true);
+    expect(
+      metadataNeedsMarquee(
+        {
+          title: "Title",
+          artist: "Artist",
+          album: "Album"
+        },
+        DIAL_MARQUEE_LIMITS
+      )
+    ).toBe(false);
+  });
+});
+
 describe("property inspector isolation", () => {
   it("exposes connection controls only to the Connection action", () => {
     expect(propertyInspectorScope(CONNECTION_ACTION)).toBe("connection");
@@ -274,12 +303,14 @@ describe("SVG rendering", () => {
       track: {
         id: "t",
         title: "<Danger & Friends>",
-        artist: "A very long artist name which truncates"
+        artist: "A very long artist name which scrolls",
+        album: "A very long album name which scrolls"
       },
       playlists: []
     });
     expect(svg).toContain("&lt;Danger &amp;");
-    expect(svg).toContain("NOW PLAYING");
+    expect(svg).not.toContain("NOW PLAYING");
+    expect(svg).toContain('id="shade"');
     expect(svg).not.toContain('cx="126"');
     expect(formatTime(65.9)).toBe("1:05");
     expect(formatTime(Number.NaN)).toBe("0:00");
