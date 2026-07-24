@@ -33,7 +33,7 @@ Every message contains `"protocol": "nebula-streamdeck/1"` and a discriminating 
 ## Browser messages
 
 - `hello`: `sessionId`, `clientId`, `origin`, `nebulaVersion`, `visible`, `lastActiveAt`, optional
-  `capabilities` (`seekAbsolute`, `progressVolume`)
+  `capabilities` (`seekAbsolute`, `progressVolume`, `playbackTuning`)
 - `pair`: `clientId`, `code`
 - `authenticate`: `clientId`, `proof`
 - `revoke`: `clientId`
@@ -61,7 +61,8 @@ also an unpadded 43-character base64url value. The stored token is transmitted o
 initial `pairingResult`, never in `authenticate`.
 
 A snapshot contains session/client identity, origin/version/activity fields, playback state, position,
-duration, normalized volume, mute state, optional track metadata/artwork, and playlist summaries.
+duration, normalized volume, mute state, optional playback rate, pitch semitones, pitch-correction
+mode, optional track metadata/artwork, and playlist summaries.
 It must not contain the full queue, Subsonic credentials, server tokens, or authenticated media URLs.
 
 ## Plugin messages and commands
@@ -76,6 +77,9 @@ It must not contain the full queue, Subsonic credentials, server tokens, or auth
   - `previous`
   - `next`
   - `setVolume { volume }`, normalized from 0 to 1
+  - `setPlaybackRate { playbackRate }`, from 0.5 to 2.0
+  - `setPitch { pitchSemitones }`, from -12 to +12
+  - `setPitchCorrection { enabled }`; enabled is digital/independent, disabled is analogue/linked
   - `seekRelative { seconds }`
   - `seekAbsolute { seconds, trackId }`
   - `startPlaylist { playlistId }`
@@ -85,6 +89,9 @@ hardware feedback without resending track artwork or playlist summaries. Absolut
 expected track ID and fail safely if the active track changes before the browser applies the command.
 The plugin only sends `seekAbsolute` when the active browser advertises it; older v1 clients receive
 the existing `seekRelative` command instead.
+
+The plugin only sends playback tuning commands when the active browser advertises
+`playbackTuning`. This keeps the protocol backward compatible with older Nebula Music tabs.
 
 Command errors are `unauthorized`, `disconnected`, `stale_playlist`, `empty_playlist`,
 `playback_failed`, `invalid_command`, or `internal_error`.

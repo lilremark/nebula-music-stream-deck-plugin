@@ -29,7 +29,8 @@ export interface ServiceStatus extends BridgeStatus {
   pairingExpiresAt?: number;
 }
 
-type OptimisticFieldName = "playing" | "positionSeconds" | "volume";
+type OptimisticFieldName =
+  "playing" | "positionSeconds" | "volume" | "playbackRate" | "pitchSemitones" | "pitchCorrection";
 
 interface OptimisticValue<T> {
   value: T;
@@ -43,6 +44,9 @@ interface OptimisticSnapshot {
   playing?: OptimisticValue<boolean>;
   positionSeconds?: OptimisticValue<number>;
   volume?: OptimisticValue<number>;
+  playbackRate?: OptimisticValue<number>;
+  pitchSemitones?: OptimisticValue<number>;
+  pitchCorrection?: OptimisticValue<boolean>;
 }
 
 export interface OptimisticOperation {
@@ -85,11 +89,26 @@ export class NebulaService extends EventEmitter {
         : undefined;
     const volume =
       optimistic.volume && optimistic.volume.expiresAt > now ? optimistic.volume.value : undefined;
+    const playbackRate =
+      optimistic.playbackRate && optimistic.playbackRate.expiresAt > now
+        ? optimistic.playbackRate.value
+        : undefined;
+    const pitchSemitones =
+      optimistic.pitchSemitones && optimistic.pitchSemitones.expiresAt > now
+        ? optimistic.pitchSemitones.value
+        : undefined;
+    const pitchCorrection =
+      optimistic.pitchCorrection && optimistic.pitchCorrection.expiresAt > now
+        ? optimistic.pitchCorrection.value
+        : undefined;
     return {
       ...snapshot,
       ...(playing !== undefined ? { playing } : {}),
       ...(positionSeconds !== undefined ? { positionSeconds } : {}),
-      ...(volume !== undefined ? { volume, muted: volume === 0 } : {})
+      ...(volume !== undefined ? { volume, muted: volume === 0 } : {}),
+      ...(playbackRate !== undefined ? { playbackRate } : {}),
+      ...(pitchSemitones !== undefined ? { pitchSemitones } : {}),
+      ...(pitchCorrection !== undefined ? { pitchCorrection } : {})
     };
   }
 
@@ -164,7 +183,7 @@ export class NebulaService extends EventEmitter {
       if (optimisticOperation) {
         const current = this.#optimistic?.[optimisticOperation.field];
         if (current?.revision === optimisticOperation.revision) {
-          const kind = optimisticOperation.field === "playing" ? "state" : "progress";
+          const kind = optimisticChangeKind(optimisticOperation.field);
           this.clearOptimisticField(optimisticOperation.field);
           this.queueOptimisticChange(kind);
         }
@@ -235,6 +254,18 @@ export class NebulaService extends EventEmitter {
         field = "volume";
         value = clamp(command.volume, 0, 1);
         break;
+      case "setPlaybackRate":
+        field = "playbackRate";
+        value = clamp(command.playbackRate, 0.5, 2);
+        break;
+      case "setPitch":
+        field = "pitchSemitones";
+        value = clamp(command.pitchSemitones, -12, 12);
+        break;
+      case "setPitchCorrection":
+        field = "pitchCorrection";
+        value = command.enabled;
+        break;
       case "seekRelative":
         field = "positionSeconds";
         value = clamp(
@@ -274,11 +305,11 @@ export class NebulaService extends EventEmitter {
     const timer = setTimeout(() => {
       if (this.#optimistic?.[field]?.revision !== revision) return;
       this.clearOptimisticField(field);
-      this.queueOptimisticChange(field === "playing" ? "state" : "progress");
+      this.queueOptimisticChange(optimisticChangeKind(field));
     }, 2_000);
     timer.unref();
     this.#optimisticTimers.set(field, timer);
-    this.queueOptimisticChange(field === "playing" ? "state" : "progress");
+    this.queueOptimisticChange(optimisticChangeKind(field));
     return { field, revision };
   }
 
@@ -309,6 +340,26 @@ export class NebulaService extends EventEmitter {
     ) {
       this.clearOptimisticField("positionSeconds");
     }
+    if (
+      optimistic.playbackRate !== undefined &&
+      snapshot.playbackRate !== undefined &&
+      Math.abs(optimistic.playbackRate.value - snapshot.playbackRate) < 0.05
+    ) {
+      this.clearOptimisticField("playbackRate");
+    }
+    if (
+      optimistic.pitchSemitones !== undefined &&
+      snapshot.pitchSemitones !== undefined &&
+      Math.abs(optimistic.pitchSemitones.value - snapshot.pitchSemitones) < 0.05
+    ) {
+      this.clearOptimisticField("pitchSemitones");
+    }
+    if (
+      optimistic.pitchCorrection?.value === snapshot.pitchCorrection &&
+      snapshot.pitchCorrection !== undefined
+    ) {
+      this.clearOptimisticField("pitchCorrection");
+    }
   }
 
   private clearOptimisticField(field: OptimisticFieldName): void {
@@ -320,7 +371,10 @@ export class NebulaService extends EventEmitter {
     if (
       this.#optimistic.playing === undefined &&
       this.#optimistic.positionSeconds === undefined &&
-      this.#optimistic.volume === undefined
+      this.#optimistic.volume === undefined &&
+      this.#optimistic.playbackRate === undefined &&
+      this.#optimistic.pitchSemitones === undefined &&
+      this.#optimistic.pitchCorrection === undefined
     ) {
       this.#optimistic = undefined;
     }
@@ -351,4 +405,8 @@ export class NebulaService extends EventEmitter {
     }, 33 - elapsed);
     this.#optimisticEmitTimer.unref();
   }
+}
+
+function optimisticChangeKind(field: OptimisticFieldName): ServiceChangeKind {
+  return field === "positionSeconds" || field === "volume" ? "progress" : "state";
 }

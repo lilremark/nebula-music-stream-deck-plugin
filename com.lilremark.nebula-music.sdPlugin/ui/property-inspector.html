@@ -228,6 +228,14 @@
         Percent per dial tick
         <input id="volume-step" type="number" min="1" max="20" value="2" />
       </label>
+      <label id="tuning-target-setting" class="hidden">
+        Knob changes
+        <select id="tuning-target">
+          <option value="speed">Speed</option>
+          <option value="pitch">Pitch</option>
+          <option value="both">Speed and pitch</option>
+        </select>
+      </label>
     </section>
 
     <section id="connection-settings" class="hidden">
@@ -280,6 +288,12 @@
           name: "Volume",
           description: "Press to mute, rotate to adjust, or tap the strip to set an exact level.",
           settings: ["volume-setting"]
+        },
+        "speed-pitch": {
+          name: "Speed & Pitch",
+          description:
+            "Rotate to adjust speed, pitch, or both. Press the dial to switch between digital independent control and analogue vinyl-style control.",
+          settings: ["tuning-target-setting"]
         },
         playlist: {
           name: "Playlist",
@@ -390,6 +404,7 @@
         document.getElementById("desired-state").value = settings.desiredState || "toggle";
         document.getElementById("seek-step").value = settings.seekStepSeconds || 5;
         document.getElementById("volume-step").value = settings.volumeStepPercent || 2;
+        document.getElementById("tuning-target").value = settings.tuningTarget || "speed";
         renderPlaylists();
       }
 
@@ -476,6 +491,9 @@
         .addEventListener("change", (event) =>
           saveSettings({ volumeStepPercent: Number(event.target.value) })
         );
+      document
+        .getElementById("tuning-target")
+        .addEventListener("change", (event) => saveSettings({ tuningTarget: event.target.value }));
 
       const previewAction = new URLSearchParams(window.location.search).get("preview");
       if (previewAction && ACTIONS[previewAction]) {

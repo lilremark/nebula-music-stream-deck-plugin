@@ -5,7 +5,7 @@ export const PROTOCOL = "nebula-streamdeck/1" as const;
 const protocol = z.literal(PROTOCOL);
 const identifier = z.string().min(1).max(256);
 const cryptographicValue = z.string().regex(/^[A-Za-z0-9_-]{43}$/u);
-const capability = z.enum(["seekAbsolute", "progressVolume"]);
+const capability = z.enum(["seekAbsolute", "progressVolume", "playbackTuning"]);
 
 export const trackSchema = z.object({
   id: identifier,
@@ -38,6 +38,9 @@ export const snapshotSchema = z.object({
   durationSeconds: z.number().nonnegative(),
   volume: z.number().min(0).max(1),
   muted: z.boolean(),
+  playbackRate: z.number().min(0.5).max(2).optional(),
+  pitchSemitones: z.number().min(-12).max(12).optional(),
+  pitchCorrection: z.boolean().optional(),
   track: trackSchema.nullable(),
   playlists: z.array(playlistSchema).max(1000)
 });
@@ -48,6 +51,15 @@ export const commandSchema = z.discriminatedUnion("name", [
   z.object({ name: z.literal("previous") }),
   z.object({ name: z.literal("next") }),
   z.object({ name: z.literal("setVolume"), volume: z.number().min(0).max(1) }),
+  z.object({
+    name: z.literal("setPlaybackRate"),
+    playbackRate: z.number().finite().min(0.5).max(2)
+  }),
+  z.object({
+    name: z.literal("setPitch"),
+    pitchSemitones: z.number().finite().min(-12).max(12)
+  }),
+  z.object({ name: z.literal("setPitchCorrection"), enabled: z.boolean() }),
   z.object({
     name: z.literal("seekRelative"),
     seconds: z.number().finite().min(-86_400).max(86_400)

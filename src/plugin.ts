@@ -7,6 +7,7 @@ import {
   PlaylistBrowserAction,
   PlayPauseAction,
   PreviousAction,
+  SpeedPitchAction,
   VolumeAction
 } from "./actions.js";
 import { acceptsConnectionCommand, propertyInspectorScope } from "./core/property-inspector.js";
@@ -38,6 +39,7 @@ streamDeck.actions.registerAction(new PlayPauseAction(service));
 streamDeck.actions.registerAction(new PreviousAction(service));
 streamDeck.actions.registerAction(new NextAction(service));
 streamDeck.actions.registerAction(new VolumeAction(service));
+streamDeck.actions.registerAction(new SpeedPitchAction(service));
 streamDeck.actions.registerAction(new PlaylistAction(service));
 streamDeck.actions.registerAction(new PlaylistBrowserAction(service));
 streamDeck.actions.registerAction(new ConnectionAction(service));

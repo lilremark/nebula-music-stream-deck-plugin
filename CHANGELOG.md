@@ -7,6 +7,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-07-24
+
+### Added
+
+- Stream Deck+ Speed & Pitch dial with configurable speed-only, pitch-only, or combined control.
+- Dial press toggles Nebula Music between digital independent pitch correction and analogue
+  vinyl-style speed/pitch behavior.
+- Immediate optimistic tuning feedback with compatibility detection for older Nebula Music tabs.
+
 ## [1.0.0] - 2026-07-24
 
 ### Added
@@ -41,5 +50,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Keep Subsonic credentials, authenticated artwork URLs, queues, pairing secrets, and media
   metadata out of plugin logs.
 
-[Unreleased]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/lilremark/nebula-music-stream-deck-plugin/releases/tag/v1.0.0
