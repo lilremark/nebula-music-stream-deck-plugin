@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { changedFeedback, CommandDispatcher } from "../src/core/command-dispatcher.js";
+import { LatestFeedbackDispatcher } from "../src/core/feedback-dispatcher.js";
 import { nowPlayingPressCommand } from "../src/core/interaction.js";
 import {
   DIAL_MARQUEE_LIMITS,
@@ -164,6 +165,36 @@ describe("control dispatch", () => {
         { artwork: "large-data-url", title: "Song", progress: 11, time: "0:11" }
       )
     ).toEqual({ progress: 11, time: "0:11" });
+  });
+
+  it("keeps only the newest hardware feedback frame during a burst", async () => {
+    vi.useFakeTimers();
+    try {
+      let finishFirst: (() => void) | undefined;
+      const first = new Promise<void>((resolve) => {
+        finishFirst = resolve;
+      });
+      const send = vi
+        .fn<(target: string, feedback: Record<string, string | number>) => Promise<void>>()
+        .mockImplementationOnce(() => first)
+        .mockResolvedValue();
+      const dispatcher = new LatestFeedbackDispatcher(send, 50);
+
+      dispatcher.update("dial", "target", { value: 1, state: "ACTIVE" });
+      for (let value = 2; value <= 100; value += 1) {
+        dispatcher.update("dial", "target", { value, state: "ACTIVE" });
+      }
+      expect(send).toHaveBeenCalledTimes(1);
+      expect(send).toHaveBeenLastCalledWith("target", { value: 1, state: "ACTIVE" });
+
+      finishFirst?.();
+      await Promise.resolve();
+      await vi.advanceTimersByTimeAsync(50);
+      expect(send).toHaveBeenCalledTimes(2);
+      expect(send).toHaveBeenLastCalledWith("target", { value: 100 });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

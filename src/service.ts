@@ -408,5 +408,10 @@ export class NebulaService extends EventEmitter {
 }
 
 function optimisticChangeKind(field: OptimisticFieldName): ServiceChangeKind {
-  return field === "positionSeconds" || field === "volume" ? "progress" : "state";
+  return field === "positionSeconds" ||
+    field === "volume" ||
+    field === "playbackRate" ||
+    field === "pitchSemitones"
+    ? "progress"
+    : "state";
 }

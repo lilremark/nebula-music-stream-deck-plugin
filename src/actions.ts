@@ -10,8 +10,9 @@ import {
   type WillAppearEvent,
   type WillDisappearEvent
 } from "@elgato/streamdeck";
-import { changedFeedback, CommandDispatcher } from "./core/command-dispatcher.js";
+import { CommandDispatcher } from "./core/command-dispatcher.js";
 import { commandErrorLabel } from "./core/errors.js";
+import { LatestFeedbackDispatcher } from "./core/feedback-dispatcher.js";
 import { nowPlayingPressCommand } from "./core/interaction.js";
 import {
   DIAL_MARQUEE_LIMITS,
@@ -30,15 +31,7 @@ import {
   volumeFromTouch
 } from "./core/math.js";
 import type { NebulaCommand } from "./protocol/schema.js";
-import {
-  dialArtworkFallbackSvg,
-  dialIconSvg,
-  formatTime,
-  nowPlayingKeyImage,
-  playlistSvg,
-  statusSvg,
-  volumeSvg
-} from "./render/svg.js";
+import { formatTime, nowPlayingKeyImage, playlistSvg, statusSvg, volumeSvg } from "./render/svg.js";
 import type { NebulaService, OptimisticOperation, ServiceChangeKind } from "./service.js";
 
 type CommonSettings = {
@@ -75,12 +68,13 @@ abstract class ResponsiveAction<
   T extends CommonSettings = CommonSettings
 > extends SingletonAction<T> {
   readonly #dispatcher: CommandDispatcher<QueuedCommand>;
+  readonly #feedbackDispatcher: LatestFeedbackDispatcher<Action<T>>;
   readonly #refreshes = new Map<string, RefreshState<T>>();
   readonly #images = new Map<string, string>();
   readonly #imageUpdatedAt = new Map<string, number>();
   readonly #titles = new Map<string, string>();
   readonly #states = new Map<string, number>();
-  readonly #feedback = new Map<string, Record<string, string | number>>();
+  readonly #settings = new Map<string, T>();
   readonly #errors = new Map<string, string>();
   readonly #errorTimers = new Map<string, NodeJS.Timeout>();
 
@@ -88,6 +82,9 @@ abstract class ResponsiveAction<
     super();
     this.#dispatcher = new CommandDispatcher(({ command, operation }) =>
       service.command(command, false, operation)
+    );
+    this.#feedbackDispatcher = new LatestFeedbackDispatcher((target, feedback) =>
+      target.isDial() ? target.setFeedback(feedback) : Promise.resolve()
     );
     service.on("change", (kind: ServiceChangeKind) => {
       if (!this.shouldRefresh(kind)) return;
@@ -98,12 +95,14 @@ abstract class ResponsiveAction<
   }
 
   override async onWillAppear(event: WillAppearEvent<T>): Promise<void> {
+    this.#settings.set(event.action.id, event.payload.settings);
     this.clearFeedbackCache(event.action.id);
     await this.requestRefresh(event.action);
   }
 
   override onWillDisappear(event: WillDisappearEvent<T>): void {
     this.#refreshes.delete(event.action.id);
+    this.#settings.delete(event.action.id);
     this.#errors.delete(event.action.id);
     const timer = this.#errorTimers.get(event.action.id);
     if (timer) clearTimeout(timer);
@@ -112,11 +111,16 @@ abstract class ResponsiveAction<
   }
 
   override async onDidReceiveSettings(event: DidReceiveSettingsEvent<T>): Promise<void> {
+    this.#settings.set(event.action.id, event.payload.settings);
     this.clearFeedbackCache(event.action.id);
     await this.requestRefresh(event.action);
   }
 
   protected abstract refresh(target: Action<T>, kind: ServiceChangeKind): Promise<void>;
+
+  protected settingsFor(target: Action<T>): T {
+    return this.#settings.get(target.id) ?? ({} as T);
+  }
 
   protected shouldRefresh(kind: ServiceChangeKind): boolean {
     return kind === "state";
@@ -183,16 +187,12 @@ abstract class ResponsiveAction<
     this.#states.set(target.id, state);
   }
 
-  protected async setFeedback(
+  protected setFeedback(
     target: Action<T>,
     feedback: Record<string, string | number>
   ): Promise<void> {
-    if (!target.isDial()) return;
-    const previous = this.#feedback.get(target.id) ?? {};
-    const changed = changedFeedback(previous, feedback);
-    if (Object.keys(changed).length === 0) return;
-    await target.setFeedback(changed);
-    this.#feedback.set(target.id, { ...previous, ...changed });
+    if (target.isDial()) this.#feedbackDispatcher.update(target.id, target, feedback);
+    return Promise.resolve();
   }
 
   private async drainRefreshes(state: RefreshState<T>): Promise<void> {
@@ -238,7 +238,7 @@ abstract class ResponsiveAction<
     this.#imageUpdatedAt.delete(actionId);
     this.#titles.delete(actionId);
     this.#states.delete(actionId);
-    this.#feedback.delete(actionId);
+    this.#feedbackDispatcher.clear(actionId);
   }
 }
 
@@ -324,7 +324,7 @@ export class NowPlayingAction extends ResponsiveAction {
     if (target.isDial()) {
       const track = snapshot?.track;
       await this.setFeedback(target, {
-        artwork: track?.artworkDataUrl ?? dialArtworkFallbackSvg(),
+        state: snapshot?.playing ? "PLAYING" : "PAUSED",
         trackTitle: track
           ? marqueeText(track.title, DIAL_MARQUEE_LIMITS.title, this.#marqueeFrame)
           : "Nothing playing",
@@ -433,8 +433,9 @@ export class VolumeAction extends ResponsiveAction {
     }
     if (target.isDial()) {
       await this.setFeedback(target, {
-        icon: dialIconSvg("volume", !snapshot || snapshot.muted),
+        state: !snapshot || snapshot.muted ? "MUTED" : "ACTIVE",
         value: snapshot ? `${Math.round(snapshot.volume * 100)}%` : "—",
+        hint: "ROTATE · PRESS TO MUTE",
         volume: Math.round((snapshot?.volume ?? 0) * 100)
       });
     }
@@ -486,7 +487,7 @@ export class SpeedPitchAction extends ResponsiveAction<PlaybackTuningSettings> {
 
   protected override async refresh(target: Action<PlaybackTuningSettings>): Promise<void> {
     if (!target.isDial()) return;
-    const settings = await target.getSettings<PlaybackTuningSettings>();
+    const settings = this.settingsFor(target);
     const supported = this.service.supportsActiveCapability("playbackTuning");
     const snapshot = this.service.snapshot;
     await this.setFeedback(target, {
@@ -497,6 +498,10 @@ export class SpeedPitchAction extends ResponsiveAction<PlaybackTuningSettings> {
         ? `KNOB · ${(settings.tuningTarget ?? "speed").toUpperCase()}`
         : "NEBULA REQUIRED"
     });
+  }
+
+  protected override shouldRefresh(kind: ServiceChangeKind): boolean {
+    return kind === "state" || kind === "progress";
   }
 }
 
@@ -513,7 +518,7 @@ export class PlaylistAction extends ResponsiveAction<PlaylistSettings> {
 
   protected override async refresh(target: Action<PlaylistSettings>): Promise<void> {
     if (!target.isKey()) return;
-    const settings = await target.getSettings<PlaylistSettings>();
+    const settings = this.settingsFor(target);
     await this.setImage(target, playlistSvg(settings.playlistName ?? "Choose playlist"));
     await this.setTitle(target, "");
   }
@@ -523,16 +528,16 @@ export class PlaylistAction extends ResponsiveAction<PlaylistSettings> {
 export class PlaylistBrowserAction extends ResponsiveAction {
   readonly #selected = new Map<string, number>();
 
-  override async onDialRotate(event: DialRotateEvent): Promise<void> {
+  override onDialRotate(event: DialRotateEvent): void {
     const playlists = this.service.snapshot?.playlists ?? [];
     if (playlists.length === 0) {
-      await event.action.showAlert();
+      void event.action.showAlert();
       return;
     }
     const current = this.#selected.get(event.action.id) ?? 0;
     const next = mod(current + event.payload.ticks, playlists.length);
     this.#selected.set(event.action.id, next);
-    await this.requestRefresh(event.action);
+    void this.requestRefresh(event.action);
   }
 
   override async onDialDown(event: DialDownEvent): Promise<void> {
@@ -550,9 +555,9 @@ export class PlaylistBrowserAction extends ResponsiveAction {
     this.#selected.set(target.id, index);
     const playlist = playlists[index];
     await this.setFeedback(target, {
-      icon: dialIconSvg("playlist"),
       playlist: playlist?.name ?? "No playlists",
-      position: playlist ? `${index + 1} / ${playlists.length}` : "—"
+      position: playlist ? `${index + 1} / ${playlists.length}` : "—",
+      hint: playlist ? "ROTATE · PRESS TO PLAY" : "NEBULA REQUIRED"
     });
   }
 

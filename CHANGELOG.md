@@ -7,6 +7,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-07-24
+
+### Changed
+
+- Unified all Stream Deck+ touch-strip layouts around the compact Speed & Pitch visual system.
+- Removed dynamic dial pixmaps and capped hardware feedback at 20 latest-only frames per second.
+- Cached action settings locally and enabled SDK message identifiers to eliminate settings refresh
+  loops.
+
+### Fixed
+
+- Removed minimized-window latency caused by background browser timers in the command
+  acknowledgement path.
+- Prevented rapid volume, seek, playlist, speed, and pitch input from waiting on delayed hardware
+  feedback rendering.
+
 ## [1.1.0] - 2026-07-24
 
 ### Added
@@ -50,6 +66,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Keep Subsonic credentials, authenticated artwork URLs, queues, pairing secrets, and media
   metadata out of plugin logs.
 
-[Unreleased]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/lilremark/nebula-music-stream-deck-plugin/releases/tag/v1.0.0

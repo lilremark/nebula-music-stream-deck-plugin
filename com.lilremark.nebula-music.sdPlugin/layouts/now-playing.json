@@ -3,49 +3,61 @@
   "id": "com.lilremark.nebula-music.now-playing",
   "items": [
     {
-      "key": "artwork",
-      "type": "pixmap",
-      "rect": [0, 0, 100, 100]
+      "key": "label",
+      "type": "text",
+      "rect": [8, 7, 96, 14],
+      "alignment": "left",
+      "color": "#737373",
+      "font": { "size": 9, "weight": 700 },
+      "value": "NOW PLAYING"
+    },
+    {
+      "key": "state",
+      "type": "text",
+      "rect": [108, 7, 84, 14],
+      "alignment": "right",
+      "color": "#3b82c4",
+      "font": { "size": 9, "weight": 700 }
     },
     {
       "key": "trackTitle",
       "type": "text",
-      "rect": [108, 7, 88, 20],
+      "rect": [8, 29, 184, 20],
       "alignment": "left",
       "color": "#fafafa",
-      "font": { "size": 14, "weight": 700 },
+      "font": { "size": 15, "weight": 700 },
       "text-overflow": "fade"
     },
     {
       "key": "artist",
       "type": "text",
-      "rect": [108, 31, 88, 14],
+      "rect": [8, 51, 184, 13],
       "alignment": "left",
       "color": "#d4d4d4",
-      "font": { "size": 10, "weight": 500 },
+      "font": { "size": 10, "weight": 600 },
       "text-overflow": "fade"
     },
     {
       "key": "album",
       "type": "text",
-      "rect": [108, 48, 88, 13],
+      "rect": [8, 66, 184, 12],
       "alignment": "left",
-      "color": "#a3a3a3",
+      "color": "#737373",
       "font": { "size": 9, "weight": 500 },
       "text-overflow": "fade"
     },
     {
       "key": "time",
       "type": "text",
-      "rect": [108, 67, 88, 12],
+      "rect": [8, 83, 68, 11],
       "alignment": "left",
       "color": "#a3a3a3",
-      "font": { "size": 9, "weight": 500 }
+      "font": { "size": 8, "weight": 600 }
     },
     {
       "key": "progress",
       "type": "bar",
-      "rect": [108, 87, 84, 4],
+      "rect": [80, 87, 112, 4],
       "range": { "min": 0, "max": 100 },
       "bar_bg_c": "#262626",
       "bar_fill_c": "#3b82c4",

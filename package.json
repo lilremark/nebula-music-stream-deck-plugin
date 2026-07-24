@@ -1,6 +1,6 @@
 {
   "name": "nebula-music-stream-deck-plugin",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "description": "Stream Deck controls for a Nebula Music browser session.",
   "type": "module",
