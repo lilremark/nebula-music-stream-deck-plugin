@@ -398,7 +398,7 @@ describe("SVG rendering", () => {
     };
     const mutedVolume = volumeSvg(mutedVolumeSnapshot);
     expect(mutedVolume).toContain("MUTED");
-    expect(mutedVolume).toContain('d="M2 3l20 18"');
+    expect(mutedVolume).toContain('d="m16 9 6 6"');
     expect(volumeKeyState({ ...mutedVolumeSnapshot, muted: true, volume: 0.7 })).toBe(1);
     expect(volumeKeyState({ ...mutedVolumeSnapshot, muted: false, volume: 0.7 })).toBe(0);
     expect(playlistSvg("Playlist")).not.toContain("Disconnected");
