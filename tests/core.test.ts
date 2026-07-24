@@ -8,9 +8,22 @@ import {
   volumeFromTouch
 } from "../src/core/math.js";
 import { commandErrorLabel, NebulaCommandError } from "../src/core/errors.js";
+import {
+  acceptsConnectionCommand,
+  CONNECTION_ACTION,
+  PLAYLIST_ACTION,
+  propertyInspectorScope
+} from "../src/core/property-inspector.js";
 import { selectActiveInstance, type InstanceCandidate } from "../src/core/selection.js";
 import { commandSchema, PROTOCOL, parseBrowserMessage } from "../src/protocol/schema.js";
-import { formatTime, nowPlayingSvg, playlistSvg, volumeSvg } from "../src/render/svg.js";
+import {
+  dialArtworkFallbackSvg,
+  dialIconSvg,
+  formatTime,
+  nowPlayingSvg,
+  playlistSvg,
+  volumeSvg
+} from "../src/render/svg.js";
 
 const base: InstanceCandidate = {
   sessionId: "base",
@@ -139,6 +152,16 @@ describe("control dispatch", () => {
   });
 });
 
+describe("property inspector isolation", () => {
+  it("exposes connection controls only to the Connection action", () => {
+    expect(propertyInspectorScope(CONNECTION_ACTION)).toBe("connection");
+    expect(propertyInspectorScope(PLAYLIST_ACTION)).toBe("playlists");
+    expect(propertyInspectorScope("com.lilremark.nebula-music.volume")).toBeUndefined();
+    expect(acceptsConnectionCommand(CONNECTION_ACTION)).toBe(true);
+    expect(acceptsConnectionCommand(PLAYLIST_ACTION)).toBe(false);
+  });
+});
+
 describe("protocol", () => {
   it("accepts versioned hello messages and rejects invalid protocol data", () => {
     expect(
@@ -222,10 +245,11 @@ describe("protocol", () => {
 });
 
 describe("SVG rendering", () => {
-  it("renders disconnected and connected device states safely", () => {
-    expect(nowPlayingSvg()).toContain("Disconnected");
-    expect(volumeSvg()).toContain("Disconnected");
-    expect(playlistSvg("Favorites", true)).toContain("Favorites");
+  it("renders action-specific device states safely", () => {
+    expect(nowPlayingSvg()).toContain("NO PLAYER");
+    expect(nowPlayingSvg()).not.toContain("Disconnected");
+    expect(volumeSvg()).not.toContain("Disconnected");
+    expect(playlistSvg("Favorites")).toContain("Favorites");
     const svg = nowPlayingSvg({
       sessionId: "s",
       clientId: "c",
@@ -247,7 +271,7 @@ describe("SVG rendering", () => {
       playlists: []
     });
     expect(svg).toContain("&lt;Danger &amp;");
-    expect(svg).toContain('width="36"');
+    expect(svg).toContain('width="32"');
     expect(formatTime(65.9)).toBe("1:05");
     expect(formatTime(Number.NaN)).toBe("0:00");
     expect(
@@ -268,6 +292,9 @@ describe("SVG rendering", () => {
         playlists: []
       })
     ).toContain("0%");
-    expect(playlistSvg("Playlist", false)).toContain("Disconnected");
+    expect(playlistSvg("Playlist")).not.toContain("Disconnected");
+    expect(dialIconSvg("volume")).toMatch(/^data:image\/svg\+xml;base64,/u);
+    expect(dialIconSvg("playlist")).toMatch(/^data:image\/svg\+xml;base64,/u);
+    expect(dialArtworkFallbackSvg()).toMatch(/^data:image\/svg\+xml;base64,/u);
   });
 });

@@ -9,19 +9,24 @@ import {
   PreviousAction,
   VolumeAction
 } from "./actions.js";
+import { acceptsConnectionCommand, propertyInspectorScope } from "./core/property-inspector.js";
 import { NebulaService } from "./service.js";
 
 const service = new NebulaService();
 let propertyInspectorVisible = false;
+let propertyInspectorAction: string | undefined;
 let lastPropertyInspectorPayload = "";
 
-function sendPropertyInspectorStatus(force = false): void {
+function sendPropertyInspectorData(force = false): void {
   if (!propertyInspectorVisible) return;
-  const payload = {
-    type: "status",
-    ...service.getStatus(),
-    playlists: service.snapshot?.playlists ?? []
-  };
+  const scope = propertyInspectorScope(propertyInspectorAction);
+  const payload =
+    scope === "connection"
+      ? { type: "connection", ...service.getStatus() }
+      : scope === "playlists"
+        ? { type: "playlists", playlists: service.snapshot?.playlists ?? [] }
+        : undefined;
+  if (!payload) return;
   const serialized = JSON.stringify(payload);
   if (!force && serialized === lastPropertyInspectorPayload) return;
   lastPropertyInspectorPayload = serialized;
@@ -37,14 +42,16 @@ streamDeck.actions.registerAction(new PlaylistAction(service));
 streamDeck.actions.registerAction(new PlaylistBrowserAction(service));
 streamDeck.actions.registerAction(new ConnectionAction(service));
 
-streamDeck.ui.onDidAppear(() => {
+streamDeck.ui.onDidAppear((event) => {
   propertyInspectorVisible = true;
+  propertyInspectorAction = event.action.manifestId;
   lastPropertyInspectorPayload = "";
-  sendPropertyInspectorStatus(true);
+  sendPropertyInspectorData(true);
 });
 
 streamDeck.ui.onDidDisappear(() => {
   propertyInspectorVisible = false;
+  propertyInspectorAction = undefined;
   lastPropertyInspectorPayload = "";
 });
 
@@ -53,21 +60,29 @@ streamDeck.ui.onSendToPlugin((event) => {
   const payload = event.payload as Record<string, unknown>;
   const type = payload.type;
   if (type === "getStatus") {
-    sendPropertyInspectorStatus(true);
-  } else if (type === "generatePairingCode") {
+    sendPropertyInspectorData(true);
+  } else if (acceptsConnectionCommand(propertyInspectorAction) && type === "generatePairingCode") {
     service.issuePairingCode();
-    sendPropertyInspectorStatus(true);
-  } else if (type === "pinInstance") {
+    sendPropertyInspectorData(true);
+  } else if (acceptsConnectionCommand(propertyInspectorAction) && type === "pinInstance") {
     const sessionId = typeof payload.sessionId === "string" ? payload.sessionId : undefined;
     void service.pinSession(sessionId);
-  } else if (type === "setPort" && typeof payload.port === "number") {
+  } else if (
+    acceptsConnectionCommand(propertyInspectorAction) &&
+    type === "setPort" &&
+    typeof payload.port === "number"
+  ) {
     void service.setPort(payload.port);
-  } else if (type === "unpair" && typeof payload.clientId === "string") {
+  } else if (
+    acceptsConnectionCommand(propertyInspectorAction) &&
+    type === "unpair" &&
+    typeof payload.clientId === "string"
+  ) {
     void service.unpair(payload.clientId);
   }
 });
 
-service.on("change", () => sendPropertyInspectorStatus());
+service.on("change", () => sendPropertyInspectorData());
 
 await streamDeck.connect();
 await service.initialize();

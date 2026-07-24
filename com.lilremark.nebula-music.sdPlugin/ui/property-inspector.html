@@ -8,51 +8,120 @@
       :root {
         color-scheme: dark;
         font:
-          13px system-ui,
+          13px -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
           sans-serif;
+        --bg: #232323;
+        --panel: #2b2b2b;
+        --surface: #343434;
+        --border: #454545;
+        --text: #fafafa;
+        --muted: #a3a3a3;
+        --cyan: #06b6d4;
+        --violet: #8b5cf6;
+      }
+      * {
+        box-sizing: border-box;
       }
       body {
         margin: 0;
+        padding: 12px;
+        color: var(--text);
+        background: var(--bg);
+      }
+      .action-header {
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 12px;
         padding: 14px;
-        color: #eceef5;
-        background: #2d2d2d;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background:
+          radial-gradient(circle at 5% 0%, rgb(6 182 212 / 18%), transparent 48%),
+          radial-gradient(circle at 100% 100%, rgb(139 92 246 / 16%), transparent 52%), var(--panel);
+      }
+      .brand {
+        margin-bottom: 6px;
+        color: var(--cyan);
+        font-size: 9px;
+        font-weight: 750;
+        letter-spacing: 1.8px;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+      }
+      .description {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.45;
       }
       section {
-        margin: 0 0 16px;
+        margin: 0 0 12px;
         padding: 12px;
-        border: 1px solid #4c4c4c;
-        border-radius: 7px;
-        background: #343434;
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        background: var(--panel);
       }
       h2 {
         margin: 0 0 10px;
-        font-size: 13px;
+        color: #d4d4d4;
+        font-size: 10px;
+        font-weight: 750;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
       }
       label {
         display: grid;
-        gap: 5px;
-        margin: 10px 0;
-        color: #cfd3de;
+        gap: 6px;
+        margin: 10px 0 0;
+        color: #d4d4d4;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      label:first-of-type {
+        margin-top: 0;
       }
       input,
       select,
       button {
-        box-sizing: border-box;
         width: 100%;
-        min-height: 30px;
-        border: 1px solid #666;
-        border-radius: 4px;
-        color: #fff;
-        background: #222;
+        min-height: 32px;
+        border: 1px solid #5a5a5a;
+        border-radius: 6px;
+        color: var(--text);
+        background: #202020;
+        font: inherit;
+      }
+      input,
+      select {
+        padding: 0 9px;
+      }
+      input:focus,
+      select:focus,
+      button:focus-visible {
+        outline: 2px solid rgb(6 182 212 / 45%);
+        outline-offset: 1px;
+        border-color: var(--cyan);
       }
       button {
         cursor: pointer;
-        background: #6d3ed6;
-        border-color: #8b5cf6;
+        border-color: #0891b2;
+        background: linear-gradient(135deg, #0891b2, #7c3aed);
+        font-weight: 650;
+      }
+      button:hover {
+        filter: brightness(1.08);
       }
       button.secondary {
-        background: #444;
-        border-color: #666;
+        border-color: #5a5a5a;
+        background: var(--surface);
+        font-weight: 600;
       }
       .row {
         display: grid;
@@ -61,51 +130,87 @@
       }
       .row button {
         width: auto;
-        padding: 0 10px;
+        padding: 0 11px;
       }
       .status {
         display: flex;
         gap: 8px;
         align-items: center;
+        min-height: 20px;
+        color: #e5e5e5;
+        font-weight: 600;
       }
       .dot {
-        width: 9px;
-        height: 9px;
+        width: 8px;
+        height: 8px;
         border-radius: 50%;
-        background: #ef4444;
+        background: #737373;
+        box-shadow: 0 0 0 3px rgb(115 115 115 / 16%);
       }
       .dot.ok {
         background: #22c55e;
+        box-shadow: 0 0 0 3px rgb(34 197 94 / 16%);
+      }
+      .dot.warn {
+        background: #f59e0b;
+        box-shadow: 0 0 0 3px rgb(245 158 11 / 16%);
       }
       .code {
-        margin: 10px 0;
-        padding: 8px;
+        margin: 11px 0;
+        padding: 10px 8px;
+        border: 1px solid rgb(6 182 212 / 30%);
+        border-radius: 7px;
         text-align: center;
-        border-radius: 5px;
+        background: #181818;
         font:
-          700 24px ui-monospace,
+          750 23px ui-monospace,
+          "SFMono-Regular",
+          Consolas,
           monospace;
-        letter-spacing: 4px;
-        background: #202020;
+        letter-spacing: 5px;
       }
-      .muted {
-        color: #aeb4c3;
-        font-size: 11px;
-      }
-      .hidden {
-        display: none;
+      .hint {
+        margin: 9px 0 0;
+        color: var(--muted);
+        font-size: 10.5px;
+        line-height: 1.45;
       }
       .client {
         display: grid;
-        grid-template-columns: 1fr auto;
+        grid-template-columns: minmax(0, 1fr) auto;
         gap: 7px;
-        margin-top: 7px;
+        align-items: center;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border);
+      }
+      .client span {
+        overflow: hidden;
+        color: #d4d4d4;
+        font-size: 10.5px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .client button {
+        width: auto;
+        min-height: 27px;
+        padding: 0 9px;
+        font-size: 10px;
+      }
+      .hidden {
+        display: none !important;
       }
     </style>
   </head>
   <body>
-    <section id="action-options" class="hidden">
-      <h2>Action</h2>
+    <header class="action-header">
+      <div class="brand">Nebula Music</div>
+      <h1 id="action-name">Action</h1>
+      <p id="action-description" class="description"></p>
+    </header>
+
+    <section id="action-settings" class="hidden">
+      <h2>Settings</h2>
       <label id="playlist-setting" class="hidden">
         Playlist
         <select id="playlist"></select>
@@ -113,28 +218,28 @@
       <label id="playback-setting" class="hidden">
         Multi Action behavior
         <select id="desired-state">
-          <option value="toggle">Toggle</option>
-          <option value="play">Play</option>
-          <option value="pause">Pause</option>
+          <option value="toggle">Toggle playback</option>
+          <option value="play">Always play</option>
+          <option value="pause">Always pause</option>
         </select>
       </label>
       <label id="seek-setting" class="hidden">
-        Seconds per seek tick
+        Seconds per dial tick
         <input id="seek-step" type="number" min="1" max="60" value="5" />
       </label>
       <label id="volume-setting" class="hidden">
-        Volume percent per tick
+        Percent per dial tick
         <input id="volume-step" type="number" min="1" max="20" value="2" />
       </label>
     </section>
 
-    <section>
-      <h2>Browser bridge</h2>
+    <section id="connection-settings" class="hidden">
+      <h2>Browser connection</h2>
       <div class="status"><span id="dot" class="dot"></span><span id="status">Starting…</span></div>
       <div id="pairing-code" class="code hidden"></div>
       <button id="pair">Generate pairing code</button>
-      <p class="muted">
-        Enter this one-time code in Nebula Music → Settings → Stream Deck. It expires after five
+      <p class="hint">
+        Enter the one-time code in Nebula Music → Settings → Stream Deck. It expires after five
         minutes.
       </p>
       <label>
@@ -154,11 +259,54 @@
     </section>
 
     <script>
+      const ACTIONS = {
+        "now-playing": {
+          name: "Now Playing",
+          description:
+            "Shows the current track. Press to play or pause, rotate to seek, or tap the progress strip to scrub.",
+          settings: ["seek-setting"]
+        },
+        "play-pause": {
+          name: "Play / Pause",
+          description: "Toggles playback, or uses an explicit state inside Multi Actions.",
+          settings: ["playback-setting"]
+        },
+        previous: {
+          name: "Previous",
+          description: "Restarts the current track or moves to the previous track."
+        },
+        next: {
+          name: "Next",
+          description: "Moves to the next track using Nebula Music’s queue behavior."
+        },
+        volume: {
+          name: "Volume",
+          description: "Press to mute, rotate to adjust, or tap the strip to set an exact level.",
+          settings: ["volume-setting"]
+        },
+        playlist: {
+          name: "Playlist",
+          description: "Starts one selected Nebula Music playlist.",
+          settings: ["playlist-setting"]
+        },
+        "playlist-browser": {
+          name: "Playlist Browser",
+          description: "Rotate through playlists and press or tap to start the selection."
+        },
+        connection: {
+          name: "Connection",
+          description: "Pairs Nebula Music and chooses which browser tab this plugin controls.",
+          connection: true
+        }
+      };
+
       let socket;
       let propertyInspectorUUID;
       let actionUUID;
+      let actionKey;
       let settings = {};
-      let latestStatus = { instances: [], playlists: [] };
+      let connection = { instances: [] };
+      let playlists = [];
 
       window.connectElgatoStreamDeckSocket = function (
         port,
@@ -170,26 +318,31 @@
         propertyInspectorUUID = uuid;
         const parsed = JSON.parse(actionInfo);
         actionUUID = parsed.action;
+        actionKey = actionUUID.split(".").at(-1);
         settings = parsed.payload?.settings || {};
-        configureActionFields();
+        configureAction();
         applySettings();
 
         socket = new WebSocket(`ws://127.0.0.1:${port}`);
         socket.addEventListener("open", () => {
           socket.send(JSON.stringify({ event: registerEvent, uuid }));
-          sendPlugin({ type: "getStatus" });
+          if (actionKey === "connection" || actionKey === "playlist") {
+            sendPlugin({ type: "getStatus" });
+          }
         });
         socket.addEventListener("message", (event) => {
           const message = JSON.parse(event.data);
           if (message.event === "didReceiveSettings") {
             settings = message.payload?.settings || {};
             applySettings();
-          } else if (
-            message.event === "sendToPropertyInspector" &&
-            message.payload?.type === "status"
-          ) {
-            latestStatus = message.payload;
-            renderStatus();
+          } else if (message.event === "sendToPropertyInspector") {
+            if (message.payload?.type === "connection") {
+              connection = message.payload;
+              renderConnection();
+            } else if (message.payload?.type === "playlists") {
+              playlists = message.payload.playlists || [];
+              renderPlaylists();
+            }
           }
         });
       };
@@ -208,6 +361,7 @@
 
       function saveSettings(patch) {
         settings = { ...settings, ...patch };
+        if (socket?.readyState !== WebSocket.OPEN) return;
         socket.send(
           JSON.stringify({
             event: "setSettings",
@@ -217,18 +371,22 @@
         );
       }
 
-      function configureActionFields() {
-        const show = (id, visible) =>
-          document.getElementById(id).classList.toggle("hidden", !visible);
-        const playlist = actionUUID.endsWith(".playlist");
-        const playback = actionUUID.endsWith(".play-pause");
-        const seek = actionUUID.endsWith(".now-playing");
-        const volume = actionUUID.endsWith(".volume");
-        show("action-options", playlist || playback || seek || volume);
-        show("playlist-setting", playlist);
-        show("playback-setting", playback);
-        show("seek-setting", seek);
-        show("volume-setting", volume);
+      function configureAction() {
+        const config = ACTIONS[actionKey] || {
+          name: "Nebula Music",
+          description: "Control Nebula Music from Stream Deck."
+        };
+        document.getElementById("action-name").textContent = config.name;
+        document.getElementById("action-description").textContent = config.description;
+        for (const id of config.settings || []) {
+          document.getElementById(id).classList.remove("hidden");
+        }
+        document
+          .getElementById("action-settings")
+          .classList.toggle("hidden", !(config.settings || []).length);
+        document
+          .getElementById("connection-settings")
+          .classList.toggle("hidden", !config.connection);
       }
 
       function applySettings() {
@@ -238,34 +396,37 @@
         renderPlaylists();
       }
 
-      function renderStatus() {
-        const connected = latestStatus.instances.some((item) => item.authenticated);
+      function renderConnection() {
+        const connected = connection.instances.some((item) => item.authenticated);
+        const pairingRequired = !connected && connection.instances.length > 0;
         const statusText =
-          latestStatus.status === "port-conflict"
+          connection.status === "port-conflict"
             ? "Port unavailable"
             : connected
               ? "Connected"
-              : latestStatus.instances.length
+              : pairingRequired
                 ? "Pairing required"
                 : "Waiting for Nebula Music";
         document.getElementById("status").textContent = statusText;
-        document.getElementById("dot").classList.toggle("ok", connected);
-        document.getElementById("port").value = latestStatus.port || 37921;
+        const dot = document.getElementById("dot");
+        dot.classList.toggle("ok", connected);
+        dot.classList.toggle("warn", pairingRequired || connection.status === "port-conflict");
+        document.getElementById("port").value = connection.port || 37921;
         const code = document.getElementById("pairing-code");
-        code.textContent = latestStatus.pairingCode || "";
-        code.classList.toggle("hidden", !latestStatus.pairingCode);
+        code.textContent = connection.pairingCode || "";
+        code.classList.toggle("hidden", !connection.pairingCode);
 
         const instance = document.getElementById("instance");
         instance.replaceChildren(new Option("Automatic", ""));
-        for (const item of latestStatus.instances) {
-          const label = `${item.origin} — ${item.playing ? "playing" : item.visible ? "visible" : "idle"}`;
-          instance.add(new Option(label, item.sessionId));
+        for (const item of connection.instances) {
+          const state = item.playing ? "playing" : item.visible ? "visible" : "idle";
+          instance.add(new Option(`${item.origin} — ${state}`, item.sessionId));
         }
-        instance.value = latestStatus.pinnedSessionId || "";
+        instance.value = connection.pinnedSessionId || "";
 
         const clients = document.getElementById("clients");
         clients.replaceChildren();
-        for (const item of latestStatus.instances.filter((entry) => entry.authenticated)) {
+        for (const item of connection.instances.filter((entry) => entry.authenticated)) {
           const row = document.createElement("div");
           row.className = "client";
           const name = document.createElement("span");
@@ -279,15 +440,12 @@
           row.append(name, unpair);
           clients.append(row);
         }
-        renderPlaylists();
       }
 
       function renderPlaylists() {
         const select = document.getElementById("playlist");
         select.replaceChildren(new Option("Choose a playlist…", ""));
-        for (const item of latestStatus.playlists || []) {
-          select.add(new Option(item.name, item.id));
-        }
+        for (const item of playlists) select.add(new Option(item.name, item.id));
         select.value = settings.playlistId || "";
       }
 

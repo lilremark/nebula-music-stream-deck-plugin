@@ -2,16 +2,46 @@
   "$schema": "https://schemas.elgato.com/streamdeck/plugins/layout.json",
   "id": "com.lilremark.nebula-music.now-playing",
   "items": [
-    { "key": "artwork", "type": "pixmap", "rect": [3, 3, 62, 72] },
-    { "key": "title", "type": "text", "rect": [70, 4, 126, 22] },
-    { "key": "artist", "type": "text", "rect": [70, 29, 126, 19] },
-    { "key": "time", "type": "text", "rect": [70, 51, 126, 18] },
+    {
+      "key": "artwork",
+      "type": "pixmap",
+      "rect": [4, 4, 60, 66]
+    },
+    {
+      "key": "trackTitle",
+      "type": "text",
+      "rect": [72, 7, 122, 22],
+      "alignment": "left",
+      "color": "#fafafa",
+      "font": { "size": 15, "weight": 700 },
+      "text-overflow": "ellipsis"
+    },
+    {
+      "key": "artist",
+      "type": "text",
+      "rect": [72, 32, 122, 17],
+      "alignment": "left",
+      "color": "#a3a3a3",
+      "font": { "size": 11, "weight": 500 },
+      "text-overflow": "ellipsis"
+    },
+    {
+      "key": "time",
+      "type": "text",
+      "rect": [72, 53, 122, 15],
+      "alignment": "left",
+      "color": "#737373",
+      "font": { "size": 10, "weight": 500 }
+    },
     {
       "key": "progress",
       "type": "bar",
-      "rect": [4, 83, 192, 12],
+      "rect": [4, 83, 192, 7],
       "range": { "min": 0, "max": 100 },
-      "bar_fill_c": "#8b5cf6",
+      "bar_bg_c": "#262626",
+      "bar_fill_c": "0:#06b6d4,1:#8b5cf6",
+      "border_w": 0,
+      "subtype": 0,
       "value": 0
     }
   ]

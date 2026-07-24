@@ -4,20 +4,21 @@
     {
       "Controllers": ["Keypad", "Encoder"],
       "Encoder": {
-        "Icon": "imgs/key",
+        "Icon": "imgs/key-now-playing",
+        "background": "imgs/touch-background",
         "layout": "layouts/now-playing.json",
-        "StackColor": "#8b5cf6",
+        "StackColor": "#06b6d4",
         "TriggerDescription": {
           "Push": "Play or pause",
           "Rotate": "Seek",
           "Touch": "Scrub to position"
         }
       },
-      "Icon": "imgs/action",
+      "Icon": "imgs/action-now-playing",
       "Name": "Now Playing",
       "States": [
         {
-          "Image": "imgs/key",
+          "Image": "imgs/key-now-playing",
           "ShowTitle": false
         }
       ],
@@ -27,7 +28,7 @@
     {
       "Controllers": ["Keypad"],
       "DisableAutomaticStates": true,
-      "Icon": "imgs/action",
+      "Icon": "imgs/action-play-pause",
       "Name": "Play / Pause",
       "States": [
         {
@@ -46,7 +47,7 @@
     },
     {
       "Controllers": ["Keypad"],
-      "Icon": "imgs/action",
+      "Icon": "imgs/action-previous",
       "Name": "Previous",
       "States": [
         {
@@ -59,7 +60,7 @@
     },
     {
       "Controllers": ["Keypad"],
-      "Icon": "imgs/action",
+      "Icon": "imgs/action-next",
       "Name": "Next",
       "States": [
         {
@@ -73,20 +74,21 @@
     {
       "Controllers": ["Keypad", "Encoder"],
       "Encoder": {
-        "Icon": "imgs/key",
+        "Icon": "imgs/key-volume",
+        "background": "imgs/touch-background",
         "layout": "layouts/volume.json",
-        "StackColor": "#8b5cf6",
+        "StackColor": "#06b6d4",
         "TriggerDescription": {
           "Push": "Mute or restore volume",
           "Rotate": "Adjust volume",
           "Touch": "Set volume"
         }
       },
-      "Icon": "imgs/action",
+      "Icon": "imgs/action-volume",
       "Name": "Volume",
       "States": [
         {
-          "Image": "imgs/key",
+          "Image": "imgs/key-volume",
           "ShowTitle": false
         }
       ],
@@ -95,11 +97,11 @@
     },
     {
       "Controllers": ["Keypad"],
-      "Icon": "imgs/action",
+      "Icon": "imgs/action-playlist",
       "Name": "Playlist",
       "States": [
         {
-          "Image": "imgs/key",
+          "Image": "imgs/key-playlist",
           "ShowTitle": false
         }
       ],
@@ -109,20 +111,21 @@
     {
       "Controllers": ["Encoder"],
       "Encoder": {
-        "Icon": "imgs/key",
+        "Icon": "imgs/key-playlist-browser",
+        "background": "imgs/touch-background",
         "layout": "layouts/playlist.json",
-        "StackColor": "#8b5cf6",
+        "StackColor": "#06b6d4",
         "TriggerDescription": {
           "Push": "Play selected playlist",
           "Rotate": "Choose playlist",
           "Touch": "Play selected playlist"
         }
       },
-      "Icon": "imgs/action",
+      "Icon": "imgs/action-playlist-browser",
       "Name": "Playlist Browser",
       "States": [
         {
-          "Image": "imgs/key",
+          "Image": "imgs/key-playlist-browser",
           "ShowTitle": false
         }
       ],
@@ -131,11 +134,11 @@
     },
     {
       "Controllers": ["Keypad"],
-      "Icon": "imgs/action",
+      "Icon": "imgs/action-connection",
       "Name": "Connection",
       "States": [
         {
-          "Image": "imgs/key",
+          "Image": "imgs/key-connection",
           "ShowTitle": false
         }
       ],

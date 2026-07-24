@@ -14,8 +14,8 @@ turning the plugin into a second Subsonic client.
 
 ## Pairing
 
-1. Add the **Connection** action or select any Nebula Music action in Stream Deck.
-2. Generate a six-digit pairing code in its property inspector.
+1. Add and select the **Connection** action in Stream Deck.
+2. Generate a six-digit pairing code in the Connection property inspector.
 3. In Nebula Music, enable the Stream Deck bridge and enter the code.
 4. Keep the default endpoint, `ws://127.0.0.1:37921/nebula/v1`, unless the property inspector shows
    a fallback port.
@@ -54,8 +54,9 @@ npm run pack:dry
 
 `npm run build` bundles the plugin to
 `com.lilremark.nebula-music.sdPlugin/bin/plugin.js` and generates the required PNG plugin icons.
-`npm run dev` watches TypeScript sources. The committed plugin directory is validated and packed by
-the official Stream Deck CLI.
+`npm run dev` watches TypeScript sources. `npm run preview:ui` renders a key-image contact sheet to
+`dist/ui-preview.png`. The committed plugin directory is validated and packed by the official Stream
+Deck CLI.
 
 The browser-side contract is documented in [docs/protocol.md](docs/protocol.md). This repository is
 private and intentionally has no public license.

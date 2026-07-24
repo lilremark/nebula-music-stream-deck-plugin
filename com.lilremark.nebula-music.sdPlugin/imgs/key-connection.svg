@@ -2,5 +2,5 @@
   <defs><linearGradient id="g" gradientUnits="userSpaceOnUse" x1="10" y1="62" x2="62" y2="10"><stop stop-color="#06b6d4"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs>
   <rect width="72" height="72" rx="12" fill="#0a0a0a"/>
   <circle cx="36" cy="36" r="26" fill="#171717" stroke="url(#g)" stroke-width="2"/>
-  <path d="M47 24v24M24 24l19 12-19 12z" fill="none" stroke="#fafafa" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+  <path d="m30 42 12-12M27 45l-3 3a8 8 0 0 1-11-11l8-8a8 8 0 0 1 11 0M45 27l3-3a8 8 0 0 1 11 11l-8 8a8 8 0 0 1-11 0" fill="none" stroke="#fafafa" stroke-linecap="round" stroke-width="3"/>
 </svg>
