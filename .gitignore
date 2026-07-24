@@ -1,6 +1,7 @@
 node_modules/
 coverage/
 dist/
+logs/
 *.streamDeckPlugin
 com.lilremark.nebula-music.sdPlugin/bin/
 .DS_Store
