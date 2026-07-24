@@ -33,7 +33,7 @@ export function nowPlayingSvg(snapshot?: NebulaSnapshot, marqueeFrame = 0): stri
 
 export function volumeSvg(snapshot?: NebulaSnapshot): string {
   const percent = snapshot ? Math.round(snapshot.volume * 100) : undefined;
-  const muted = !snapshot || snapshot.muted || percent === 0;
+  const muted = volumeKeyState(snapshot) === 1;
   const ratio = percent === undefined ? 0 : clamp(percent / 100, 0, 1);
   const value = percent === undefined ? "—" : muted ? "MUTED" : `${percent}%`;
   const valueSize = muted && percent !== undefined ? 20 : 28;
@@ -43,6 +43,10 @@ export function volumeSvg(snapshot?: NebulaSnapshot): string {
   <text x="72" y="112" text-anchor="middle" font-family="Arial,sans-serif" font-size="${valueSize}" font-weight="700" fill="${muted && percent !== undefined ? ACCENT : TEXT}">${value}</text>
   ${waveformProgress(ratio, 16, 126, 112, 10, 28)}
   </svg>`;
+}
+
+export function volumeKeyState(snapshot?: NebulaSnapshot): 0 | 1 {
+  return !snapshot || snapshot.muted || snapshot.volume === 0 ? 1 : 0;
 }
 
 export function playlistSvg(name: string): string {

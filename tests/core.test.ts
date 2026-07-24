@@ -34,6 +34,7 @@ import {
   nowPlayingKeyImage,
   nowPlayingSvg,
   playlistSvg,
+  volumeKeyState,
   volumeSvg
 } from "../src/render/svg.js";
 
@@ -379,7 +380,7 @@ describe("SVG rendering", () => {
     expect(svg).not.toContain('cx="126"');
     expect(formatTime(65.9)).toBe("1:05");
     expect(formatTime(Number.NaN)).toBe("0:00");
-    const mutedVolume = volumeSvg({
+    const mutedVolumeSnapshot = {
       sessionId: "s",
       clientId: "c",
       origin: "https://example.test",
@@ -394,9 +395,12 @@ describe("SVG rendering", () => {
       muted: true,
       track: null,
       playlists: []
-    });
+    };
+    const mutedVolume = volumeSvg(mutedVolumeSnapshot);
     expect(mutedVolume).toContain("MUTED");
     expect(mutedVolume).toContain('d="M2 3l20 18"');
+    expect(volumeKeyState({ ...mutedVolumeSnapshot, muted: true, volume: 0.7 })).toBe(1);
+    expect(volumeKeyState({ ...mutedVolumeSnapshot, muted: false, volume: 0.7 })).toBe(0);
     expect(playlistSvg("Playlist")).not.toContain("Disconnected");
     expect(dialIconSvg("volume")).toMatch(/^data:image\/svg\+xml;base64,/u);
     expect(dialIconSvg("playlist")).toMatch(/^data:image\/svg\+xml;base64,/u);

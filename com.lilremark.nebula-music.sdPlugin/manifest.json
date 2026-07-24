@@ -88,11 +88,16 @@
           "Touch": "Set volume"
         }
       },
+      "DisableAutomaticStates": true,
       "Icon": "imgs/action-volume",
       "Name": "Volume",
       "States": [
         {
           "Image": "imgs/key-volume",
+          "ShowTitle": false
+        },
+        {
+          "Image": "imgs/key-volume-muted",
           "ShowTitle": false
         }
       ],
