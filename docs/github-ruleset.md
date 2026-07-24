@@ -1,12 +1,15 @@
-# Main branch ruleset
+# GitHub rulesets
 
-Configure the private repository's `main` ruleset with:
+This public repository uses repository-level branch and tag rulesets supported by GitHub Free.
 
-- pull requests required, with zero mandatory approvals for solo development;
-- required `quality` and both `smoke` matrix checks from `ci.yml`;
-- linear history required;
-- force pushes and branch deletion blocked;
-- repository administrators included unless emergency bypass is explicitly needed.
+The `main` ruleset:
 
-The initial implementation branch is `codex/initial-plugin`. Releases are made only from tagged
-commits already merged to `main`.
+- requires a pull request, with zero mandatory approvals for solo development;
+- requires `quality`, `smoke (macos-latest)`, and `smoke (windows-latest)` from `ci.yml`;
+- requires the branch to be current before merging and all review conversations to be resolved;
+- requires linear history; and
+- blocks force pushes and branch deletion, including for repository administrators.
+
+The `Release tags` ruleset targets `v*` tags and blocks tag deletion or non-fast-forward updates.
+It does not restrict tag creation, allowing the release owner to create a new version after its
+release commit has passed CI and merged to `main`.

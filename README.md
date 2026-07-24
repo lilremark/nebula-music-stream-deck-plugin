@@ -1,9 +1,12 @@
 # Nebula Music for Stream Deck
 
-A private Stream Deck and Stream Deck+ plugin for controlling the active
+A Stream Deck and Stream Deck+ plugin for controlling the active
 [Nebula Music](https://github.com/lilremark/Nebula-Music) browser tab. It provides live
 artwork and playback progress, transport controls, seeking, volume, and playlist launching without
 turning the plugin into a second Subsonic client.
+
+Download the current installer from the
+[latest GitHub release](https://github.com/lilremark/nebula-music-stream-deck-plugin/releases/latest).
 
 ## Requirements
 
@@ -59,8 +62,7 @@ npm run pack:dry
 `dist/ui-preview.png`. The committed plugin directory is validated and packed by the official Stream
 Deck CLI.
 
-The browser-side contract is documented in [docs/protocol.md](docs/protocol.md). This repository is
-private and intentionally has no public license.
+The browser-side contract is documented in [docs/protocol.md](docs/protocol.md).
 
 ## Local installation
 
@@ -88,6 +90,7 @@ already exists.
 
 ## Releases
 
-Push a tag such as `v0.1.0`. GitHub Actions verifies that it matches `package.json` `0.1.0` and
-manifest `0.1.0.0`, runs all checks, then publishes a prerelease containing the
-`.streamDeckPlugin`, SHA-256 checksum, and build provenance.
+Releases are tagged from commits already merged to `main`. A stable tag such as `v1.0.0` must
+match `package.json` `1.0.0` and manifest `1.0.0.0`. GitHub Actions runs the full validation suite,
+packages the `.streamDeckPlugin`, generates a SHA-256 checksum and build-provenance attestation,
+then publishes the GitHub release. SemVer tags containing a hyphen are published as prereleases.
