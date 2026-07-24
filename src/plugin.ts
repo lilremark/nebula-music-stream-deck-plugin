@@ -14,6 +14,7 @@ import { acceptsConnectionCommand, propertyInspectorScope } from "./core/propert
 import { NebulaService } from "./service.js";
 
 const service = new NebulaService();
+streamDeck.settings.useExperimentalMessageIdentifiers = true;
 let propertyInspectorVisible = false;
 let propertyInspectorAction: string | undefined;
 let lastPropertyInspectorPayload = "";

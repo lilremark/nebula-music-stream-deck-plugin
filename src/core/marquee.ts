@@ -17,9 +17,9 @@ export const KEY_MARQUEE_LIMITS: MarqueeLimits = {
 };
 
 export const DIAL_MARQUEE_LIMITS: MarqueeLimits = {
-  title: 13,
-  artist: 17,
-  album: 17
+  title: 24,
+  artist: 31,
+  album: 31
 };
 
 const MARQUEE_GAP = "   •   ";

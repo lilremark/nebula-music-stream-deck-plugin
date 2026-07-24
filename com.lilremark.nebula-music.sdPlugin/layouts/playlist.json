@@ -2,32 +2,48 @@
   "$schema": "https://schemas.elgato.com/streamdeck/plugins/layout.json",
   "id": "com.lilremark.nebula-music.playlist-browser",
   "items": [
-    { "key": "icon", "type": "pixmap", "rect": [8, 20, 42, 44] },
     {
       "key": "label",
       "type": "text",
-      "rect": [59, 10, 135, 18],
+      "rect": [8, 7, 92, 14],
       "alignment": "left",
-      "color": "#a3a3a3",
-      "font": { "size": 10, "weight": 700 },
+      "color": "#737373",
+      "font": { "size": 9, "weight": 700 },
       "value": "PLAYLIST"
-    },
-    {
-      "key": "playlist",
-      "type": "text",
-      "rect": [59, 32, 135, 29],
-      "alignment": "left",
-      "color": "#fafafa",
-      "font": { "size": 17, "weight": 700 },
-      "text-overflow": "ellipsis"
     },
     {
       "key": "position",
       "type": "text",
-      "rect": [59, 67, 135, 16],
+      "rect": [104, 7, 88, 14],
+      "alignment": "right",
+      "color": "#3b82c4",
+      "font": { "size": 9, "weight": 700 }
+    },
+    {
+      "key": "playlistLabel",
+      "type": "text",
+      "rect": [8, 31, 184, 12],
       "alignment": "left",
+      "color": "#a3a3a3",
+      "font": { "size": 9, "weight": 600 },
+      "value": "SELECTED"
+    },
+    {
+      "key": "playlist",
+      "type": "text",
+      "rect": [8, 45, 184, 27],
+      "alignment": "left",
+      "color": "#fafafa",
+      "font": { "size": 19, "weight": 700 },
+      "text-overflow": "fade"
+    },
+    {
+      "key": "hint",
+      "type": "text",
+      "rect": [8, 81, 184, 12],
+      "alignment": "center",
       "color": "#737373",
-      "font": { "size": 10, "weight": 500 }
+      "font": { "size": 8, "weight": 700 }
     }
   ]
 }

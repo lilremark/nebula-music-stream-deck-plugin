@@ -97,79 +97,88 @@ await sharp({
   .png()
   .toFile("dist/ui-preview.png");
 
-const artwork = await sharp(Buffer.from(previewArtwork.split(",")[1], "base64"))
-  .resize(100, 100)
-  .png()
-  .toBuffer();
-const dialTitle = escapeXml(marquee.marqueeText(snapshot.track.title, 13, 7));
-const dialArtist = escapeXml(marquee.marqueeText(snapshot.track.artist, 17, 7));
-const dialAlbum = escapeXml(marquee.marqueeText(snapshot.track.album, 17, 7));
-const dialMetadata = Buffer.from(
-  `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+const dialTitle = escapeXml(
+  marquee.marqueeText(snapshot.track.title, marquee.DIAL_MARQUEE_LIMITS.title, 7)
+);
+const dialArtist = escapeXml(
+  marquee.marqueeText(snapshot.track.artist, marquee.DIAL_MARQUEE_LIMITS.artist, 7)
+);
+const dialAlbum = escapeXml(
+  marquee.marqueeText(snapshot.track.album, marquee.DIAL_MARQUEE_LIMITS.album, 7)
+);
+const nowPlayingDial = Buffer.from(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100">
     <rect width="100" height="100" fill="#0a0a0a"/>
-    <text x="8" y="21" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="#fafafa">${dialTitle}</text>
-    <text x="8" y="42" font-family="Arial,sans-serif" font-size="10" fill="#d4d4d4">${dialArtist}</text>
-    <text x="8" y="59" font-family="Arial,sans-serif" font-size="9" fill="#a3a3a3">${dialAlbum}</text>
-    <text x="8" y="78" font-family="Arial,sans-serif" font-size="9" fill="#a3a3a3">3:24 / 5:47</text>
-    <rect x="8" y="87" width="84" height="4" rx="2" fill="#262626"/>
-    <rect x="8" y="87" width="49" height="4" rx="2" fill="#3b82c4"/>
+    <rect x="100" width="100" height="100" fill="#0a0a0a"/>
+    <text x="8" y="17" font-family="Arial,sans-serif" font-size="9" font-weight="700" fill="#737373">NOW PLAYING</text>
+    <text x="192" y="17" text-anchor="end" font-family="Arial,sans-serif" font-size="9" font-weight="700" fill="#3b82c4">PLAYING</text>
+    <text x="8" y="43" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#fafafa">${dialTitle}</text>
+    <text x="8" y="61" font-family="Arial,sans-serif" font-size="10" font-weight="600" fill="#d4d4d4">${dialArtist}</text>
+    <text x="8" y="76" font-family="Arial,sans-serif" font-size="9" fill="#737373">${dialAlbum}</text>
+    <text x="8" y="92" font-family="Arial,sans-serif" font-size="8" font-weight="600" fill="#a3a3a3">3:24 / 5:47</text>
+    <rect x="80" y="87" width="112" height="4" rx="2" fill="#262626"/>
+    <rect x="80" y="87" width="66" height="4" rx="2" fill="#3b82c4"/>
   </svg>`
 );
-const nowPlayingDial = await sharp({
-  create: { width: 200, height: 100, channels: 4, background: "#0a0a0a" }
-})
-  .composite([
-    { input: artwork, left: 0, top: 0 },
-    { input: dialMetadata, left: 100, top: 0 }
-  ])
-  .png()
-  .toBuffer();
-
-const volumeDial = await renderSimpleDial({
-  icon: render.dialIconSvg("volume"),
+const volumeDial = dialSvg({
   label: "VOLUME",
-  value: "74%",
-  detail: "Rotate • press to mute",
+  status: "ACTIVE",
+  sublabel: "",
+  leftValue: "74%",
+  hint: "ROTATE · PRESS TO MUTE",
   progress: 0.74
 });
-const playlistDial = await renderSimpleDial({
-  icon: render.dialIconSvg("playlist"),
+const playlistDial = dialSvg({
   label: "PLAYLIST",
-  value: "Night Rotation",
-  detail: "3 / 12",
-  progress: 0
+  status: "3 / 12",
+  sublabel: "SELECTED",
+  leftValue: "Night Rotation",
+  hint: "ROTATE · PRESS TO PLAY"
 });
+const tuningDial = dualValueDial();
 
 await sharp({
-  create: { width: 624, height: 100, channels: 4, background: "#232323" }
+  create: { width: 836, height: 100, channels: 4, background: "#232323" }
 })
   .composite([
     { input: nowPlayingDial, left: 0, top: 0 },
     { input: volumeDial, left: 212, top: 0 },
-    { input: playlistDial, left: 424, top: 0 }
+    { input: playlistDial, left: 424, top: 0 },
+    { input: tuningDial, left: 636, top: 0 }
   ])
   .png()
   .toFile("dist/dial-preview.png");
 
 console.log("Rendered dist/ui-preview.png and dist/dial-preview.png");
 
-async function renderSimpleDial({ icon, label, value, detail, progress }) {
-  const iconBuffer = Buffer.from(icon.split(",")[1], "base64");
-  const progressWidth = Math.round(128 * progress);
-  const text = Buffer.from(
+function dialSvg({ label, status, sublabel, leftValue, hint, progress = 0 }) {
+  const progressWidth = Math.round(184 * progress);
+  return Buffer.from(
     `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100">
       <rect width="200" height="100" fill="#0a0a0a"/>
-      <text x="64" y="24" font-family="Arial,sans-serif" font-size="10" font-weight="700" letter-spacing="1" fill="#a3a3a3">${escapeXml(label)}</text>
-      <text x="64" y="54" font-family="Arial,sans-serif" font-size="24" font-weight="700" fill="#fafafa">${escapeXml(value)}</text>
-      <text x="64" y="74" font-family="Arial,sans-serif" font-size="9" fill="#737373">${escapeXml(detail)}</text>
-      <rect x="64" y="86" width="128" height="4" rx="2" fill="#262626"/>
-      <rect x="64" y="86" width="${progressWidth}" height="4" rx="2" fill="#3b82c4"/>
+      <text x="8" y="17" font-family="Arial,sans-serif" font-size="9" font-weight="700" fill="#737373">${escapeXml(label)}</text>
+      <text x="192" y="17" text-anchor="end" font-family="Arial,sans-serif" font-size="9" font-weight="700" fill="#3b82c4">${escapeXml(status)}</text>
+      ${sublabel ? `<text x="8" y="41" font-family="Arial,sans-serif" font-size="9" font-weight="600" fill="#a3a3a3">${escapeXml(sublabel)}</text>` : ""}
+      <text x="8" y="${sublabel ? 68 : 61}" font-family="Arial,sans-serif" font-size="${sublabel ? 19 : 30}" font-weight="700" fill="#fafafa">${escapeXml(leftValue)}</text>
+      <text x="100" y="80" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" font-weight="700" fill="#737373">${escapeXml(hint)}</text>
+      ${progress ? `<rect x="8" y="87" width="184" height="4" rx="2" fill="#262626"/><rect x="8" y="87" width="${progressWidth}" height="4" rx="2" fill="#3b82c4"/>` : ""}
     </svg>`
   );
-  return sharp(text)
-    .composite([{ input: iconBuffer, left: 8, top: 26 }])
-    .png()
-    .toBuffer();
+}
+
+function dualValueDial() {
+  return Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100">
+      <rect width="200" height="100" fill="#0a0a0a"/>
+      <text x="8" y="17" font-family="Arial,sans-serif" font-size="9" font-weight="700" fill="#737373">SPEED &amp; PITCH</text>
+      <text x="192" y="17" text-anchor="end" font-family="Arial,sans-serif" font-size="9" font-weight="700" fill="#3b82c4">DIGITAL</text>
+      <text x="8" y="41" font-family="Arial,sans-serif" font-size="9" font-weight="600" fill="#a3a3a3">SPEED</text>
+      <text x="192" y="41" text-anchor="end" font-family="Arial,sans-serif" font-size="9" font-weight="600" fill="#a3a3a3">PITCH</text>
+      <text x="8" y="68" font-family="Arial,sans-serif" font-size="22" font-weight="700" fill="#fafafa">1.2×</text>
+      <text x="192" y="68" text-anchor="end" font-family="Arial,sans-serif" font-size="22" font-weight="700" fill="#fafafa">+2 st</text>
+      <text x="100" y="91" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" font-weight="700" fill="#737373">KNOB · BOTH</text>
+    </svg>`
+  );
 }
 
 function escapeXml(value) {
