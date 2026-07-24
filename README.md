@@ -32,8 +32,9 @@ a visible and recently active tab, then the newest connection.
 
 ## Actions
 
-- **Now Playing:** artwork, track metadata, state and progress. Press to play/pause; on Stream Deck+
-  rotate to seek, tap the progress strip to scrub to an absolute position, and press to play/pause.
+- **Now Playing:** the key is a display-only view of artwork, track metadata, and progress. On Stream
+  Deck+, rotate to seek, tap the progress strip to scrub to an absolute position, and press the dial
+  to play/pause.
 - **Play / Pause:** two-state key with explicit states in Multi Actions.
 - **Previous / Next:** Nebula's native queue navigation behavior.
 - **Volume:** key percentage and mute toggle; on Stream Deck+ rotate by 2%, tap the strip to set an

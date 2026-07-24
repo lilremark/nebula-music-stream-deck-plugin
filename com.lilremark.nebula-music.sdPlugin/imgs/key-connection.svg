@@ -1,6 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72">
-  <defs><linearGradient id="g" gradientUnits="userSpaceOnUse" x1="10" y1="62" x2="62" y2="10"><stop stop-color="#06b6d4"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs>
   <rect width="72" height="72" rx="12" fill="#0a0a0a"/>
-  <circle cx="36" cy="36" r="26" fill="#171717" stroke="url(#g)" stroke-width="2"/>
-  <path d="m30 42 12-12M27 45l-3 3a8 8 0 0 1-11-11l8-8a8 8 0 0 1 11 0M45 27l3-3a8 8 0 0 1 11 11l-8 8a8 8 0 0 1-11 0" fill="none" stroke="#fafafa" stroke-linecap="round" stroke-width="3"/>
+  <text x="6" y="10" font-family="Arial,sans-serif" font-size="5" font-weight="700" letter-spacing=".7" fill="#a3a3a3">CONNECTION</text>
+  <path d="M28 45l-3 3a8 8 0 0 1-11-11l8-8a8 8 0 0 1 11 0M44 28l3-3a8 8 0 0 1 11 11l-8 8a8 8 0 0 1-11 0" fill="none" stroke="#fafafa" stroke-linecap="round" stroke-width="3"/>
+  <path d="m31 42 11-11" fill="none" stroke="#3b82c4" stroke-linecap="round" stroke-width="3"/>
+  <circle cx="36" cy="61" r="2.5" fill="#3b82c4"/>
 </svg>

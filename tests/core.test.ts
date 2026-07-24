@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { changedFeedback, CommandDispatcher } from "../src/core/command-dispatcher.js";
+import { nowPlayingPressCommand } from "../src/core/interaction.js";
 import {
   clamp,
   seekPositionFromTouch,
@@ -152,6 +153,13 @@ describe("control dispatch", () => {
   });
 });
 
+describe("Now Playing interaction", () => {
+  it("keeps the key display-only while retaining dial controls", () => {
+    expect(nowPlayingPressCommand("key")).toBeUndefined();
+    expect(nowPlayingPressCommand("dial")).toEqual({ name: "togglePlayback" });
+  });
+});
+
 describe("property inspector isolation", () => {
   it("exposes connection controls only to the Connection action", () => {
     expect(propertyInspectorScope(CONNECTION_ACTION)).toBe("connection");
@@ -246,7 +254,7 @@ describe("protocol", () => {
 
 describe("SVG rendering", () => {
   it("renders action-specific device states safely", () => {
-    expect(nowPlayingSvg()).toContain("NO PLAYER");
+    expect(nowPlayingSvg()).toContain("NOTHING PLAYING");
     expect(nowPlayingSvg()).not.toContain("Disconnected");
     expect(volumeSvg()).not.toContain("Disconnected");
     expect(playlistSvg("Favorites")).toContain("Favorites");
@@ -271,7 +279,8 @@ describe("SVG rendering", () => {
       playlists: []
     });
     expect(svg).toContain("&lt;Danger &amp;");
-    expect(svg).toContain('width="32"');
+    expect(svg).toContain("NOW PLAYING");
+    expect(svg).not.toContain('cx="126"');
     expect(formatTime(65.9)).toBe("1:05");
     expect(formatTime(Number.NaN)).toBe("0:00");
     expect(
