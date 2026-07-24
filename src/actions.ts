@@ -36,7 +36,7 @@ abstract class ResponsiveAction<
     super();
     service.on("change", () => {
       this.actions.forEach((visible) => {
-        void this.refresh(visible as Action<T>);
+        void this.refresh(visible);
       });
     });
   }
