@@ -11,6 +11,9 @@ const build = await context({
   format: "esm",
   platform: "node",
   target: "node24",
+  banner: {
+    js: 'import { createRequire as __createRequire } from "node:module"; const require = __createRequire(import.meta.url);'
+  },
   sourcemap: true,
   minify: false,
   logLevel: "info"

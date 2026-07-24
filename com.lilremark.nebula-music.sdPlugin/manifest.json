@@ -145,6 +145,7 @@
   ],
   "Author": "lilremark",
   "Category": "Nebula Music",
+  "CategoryIcon": "imgs/category",
   "CodePath": "bin/plugin.js",
   "Description": "Control the active Nebula Music browser session from Stream Deck and Stream Deck+.",
   "Icon": "imgs/plugin",

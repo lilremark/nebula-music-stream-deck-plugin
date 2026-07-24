@@ -27,6 +27,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run test:coverage
       - run: npm run build
+      - run: npm run smoke:plugin
       - run: npm audit --audit-level=high
       - run: npm run validate
       - run: npm run pack:dry
@@ -47,4 +48,5 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - run: npm run smoke:plugin
       - run: npm run validate

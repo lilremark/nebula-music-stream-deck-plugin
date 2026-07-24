@@ -22,7 +22,8 @@
     "validate": "streamdeck validate com.lilremark.nebula-music.sdPlugin --no-update-check",
     "pack:dry": "streamdeck pack com.lilremark.nebula-music.sdPlugin --dry-run --no-update-check",
     "pack": "streamdeck pack com.lilremark.nebula-music.sdPlugin --no-update-check",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build"
+    "smoke:plugin": "node scripts/smoke-plugin.mjs",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build && npm run smoke:plugin"
   },
   "dependencies": {
     "@elgato/streamdeck": "2.1.0",
