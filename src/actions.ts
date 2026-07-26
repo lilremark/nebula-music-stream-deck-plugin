@@ -17,10 +17,9 @@ import { LatestFeedbackDispatcher } from "./core/feedback-dispatcher.js";
 import { nowPlayingPressCommand } from "./core/interaction.js";
 import {
   DIAL_MARQUEE_LIMITS,
-  KEY_MARQUEE_LIMITS,
-  keyMetadataTitle,
   marqueeText,
-  metadataNeedsMarquee
+  metadataNeedsMarquee,
+  staticKeyMetadataTitle
 } from "./core/marquee.js";
 import {
   clamp,
@@ -31,6 +30,7 @@ import {
   steppedVolume,
   volumeFromTouch
 } from "./core/math.js";
+import { FrozenArtworkCache } from "./core/now-playing-key.js";
 import { HiddenContextCache } from "./core/retained-cache.js";
 import { settingsEqual } from "./core/settings.js";
 import type { NebulaCommand } from "./protocol/schema.js";
@@ -285,6 +285,7 @@ abstract class ResponsiveAction<
 export class NowPlayingAction extends ResponsiveAction {
   #marqueeFrame = 0;
   #marqueeTrackId: string | undefined;
+  readonly #artwork = new FrozenArtworkCache();
 
   constructor(service: NebulaService) {
     super(service);
@@ -292,10 +293,8 @@ export class NowPlayingAction extends ResponsiveAction {
       const track = service.snapshot?.track;
       if (!track || !metadataNeedsMarquee(track, DIAL_MARQUEE_LIMITS)) return;
       this.#marqueeFrame += 1;
-      const keyNeedsMarquee = metadataNeedsMarquee(track, KEY_MARQUEE_LIMITS);
       this.actions.forEach((target) => {
-        if (target.isKey() && !keyNeedsMarquee) return;
-        void this.requestRefresh(target, "progress");
+        if (target.isDial()) void this.requestRefresh(target, "progress");
       });
     }, 250);
     marqueeTimer.unref();
@@ -353,11 +352,15 @@ export class NowPlayingAction extends ResponsiveAction {
       this.#marqueeFrame = 0;
     }
     if (target.isKey()) {
-      await this.setImage(target, nowPlayingKeyImage(snapshot));
-      await this.setTitle(
-        target,
-        keyMetadataTitle(snapshot?.track ?? undefined, this.#marqueeFrame)
-      );
+      const trackKey = snapshot?.track
+        ? `${snapshot.sessionId}:${snapshot.track.id}`
+        : `idle:${snapshot?.sessionId ?? "disconnected"}`;
+      const image = this.#artwork.select(trackKey, {
+        image: nowPlayingKeyImage(snapshot),
+        hasArtwork: Boolean(snapshot?.track?.artworkDataUrl)
+      });
+      await this.setImage(target, image);
+      await this.setTitle(target, staticKeyMetadataTitle(snapshot?.track ?? undefined));
       return;
     }
     if (target.isDial()) {

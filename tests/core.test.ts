@@ -6,7 +6,8 @@ import {
   DIAL_MARQUEE_LIMITS,
   keyMetadataTitle,
   marqueeText,
-  metadataNeedsMarquee
+  metadataNeedsMarquee,
+  staticKeyMetadataTitle
 } from "../src/core/marquee.js";
 import {
   clamp,
@@ -17,6 +18,7 @@ import {
   steppedVolume,
   volumeFromTouch
 } from "../src/core/math.js";
+import { FrozenArtworkCache } from "../src/core/now-playing-key.js";
 import { commandErrorLabel, NebulaCommandError } from "../src/core/errors.js";
 import {
   acceptsConnectionCommand,
@@ -294,6 +296,48 @@ describe("metadata marquee", () => {
       )
     ).toBe(" title that is muc\nAlbum\nArtist");
     expect(keyMetadataTitle(undefined, 99)).toBe("Nothing playing");
+  });
+
+  it("uses stable truncated metadata on the Now Playing key", () => {
+    expect(
+      staticKeyMetadataTitle({
+        title: "A title that is much too long",
+        artist: "An artist whose name is also much too long",
+        album: "A very long album name that does not fit"
+      })
+    ).toBe("A title that is m…\nA very long album n…\nAn artist whose nam…");
+  });
+});
+
+describe("Now Playing key artwork", () => {
+  it("allows the first artwork arrival and then freezes it for the track", () => {
+    const artwork = new FrozenArtworkCache();
+    expect(artwork.select("session:track", { image: "fallback", hasArtwork: false })).toBe(
+      "fallback"
+    );
+    expect(artwork.select("session:track", { image: "cover-a", hasArtwork: true })).toBe("cover-a");
+    expect(artwork.select("session:track", { image: "cover-b", hasArtwork: true })).toBe("cover-a");
+    expect(artwork.select("new-session:track", { image: "cover-b", hasArtwork: true })).toBe(
+      "cover-b"
+    );
+  });
+
+  it("bounds retained track artwork without time-based expiry", () => {
+    vi.useFakeTimers();
+    try {
+      const artwork = new FrozenArtworkCache(2);
+      artwork.select("first", { image: "one", hasArtwork: true });
+      vi.advanceTimersByTime(24 * 60 * 60 * 1_000);
+      artwork.select("second", { image: "two", hasArtwork: true });
+      artwork.select("third", { image: "three", hasArtwork: true });
+      expect(artwork.select("first", { image: "one-new", hasArtwork: true })).toBe("one-new");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("rejects invalid capacities", () => {
+    expect(() => new FrozenArtworkCache(0)).toThrow(RangeError);
   });
 });
 
