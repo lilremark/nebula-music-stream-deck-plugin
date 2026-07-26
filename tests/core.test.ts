@@ -25,6 +25,7 @@ import {
   propertyInspectorScope
 } from "../src/core/property-inspector.js";
 import { selectActiveInstance, type InstanceCandidate } from "../src/core/selection.js";
+import { settingsEqual } from "../src/core/settings.js";
 import { commandSchema, PROTOCOL, parseBrowserMessage } from "../src/protocol/schema.js";
 import {
   dialArtworkFallbackSvg,
@@ -196,6 +197,20 @@ describe("control dispatch", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe("settings synchronization", () => {
+  it("treats repeated settings payloads as unchanged", () => {
+    expect(settingsEqual({ seekStepSeconds: 5 }, { seekStepSeconds: 5 })).toBe(true);
+    expect(
+      settingsEqual(
+        { playlistId: "playlist", playlistName: "Favorites" },
+        { playlistName: "Favorites", playlistId: "playlist" }
+      )
+    ).toBe(true);
+    expect(settingsEqual({ volumeStepPercent: 2 }, { volumeStepPercent: 5 })).toBe(false);
+    expect(settingsEqual({ volumeStepPercent: 2 }, {})).toBe(false);
   });
 });
 
