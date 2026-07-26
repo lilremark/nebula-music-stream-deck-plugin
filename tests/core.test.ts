@@ -24,6 +24,7 @@ import {
   PLAYLIST_ACTION,
   propertyInspectorScope
 } from "../src/core/property-inspector.js";
+import { HiddenContextCache } from "../src/core/retained-cache.js";
 import { selectActiveInstance, type InstanceCandidate } from "../src/core/selection.js";
 import { settingsEqual } from "../src/core/settings.js";
 import { commandSchema, PROTOCOL, parseBrowserMessage } from "../src/protocol/schema.js";
@@ -211,6 +212,42 @@ describe("settings synchronization", () => {
     ).toBe(true);
     expect(settingsEqual({ volumeStepPercent: 2 }, { volumeStepPercent: 5 })).toBe(false);
     expect(settingsEqual({ volumeStepPercent: 2 }, {})).toBe(false);
+  });
+});
+
+describe("hardware feedback retention", () => {
+  it("retains entries until capacity pressure instead of elapsed time", () => {
+    vi.useFakeTimers();
+    try {
+      const cache = new HiddenContextCache(2);
+      expect(cache.hide("now-playing")).toBeUndefined();
+      vi.advanceTimersByTime(24 * 60 * 60 * 1_000);
+      expect(cache.hide("volume")).toBeUndefined();
+      expect(cache.hide("playlist")).toBe("now-playing");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("refreshes recency without evicting the touched entry", () => {
+    const cache = new HiddenContextCache(2);
+    cache.hide("now-playing");
+    cache.hide("volume");
+    expect(cache.hide("now-playing")).toBeUndefined();
+    expect(cache.hide("playlist")).toBe("volume");
+  });
+
+  it("removes visible entries from hidden-context eviction", () => {
+    const hidden = new HiddenContextCache(2);
+    hidden.hide("now-playing");
+    hidden.hide("volume");
+    hidden.show("now-playing");
+    expect(hidden.hide("playlist")).toBeUndefined();
+    expect(hidden.hide("speed-pitch")).toBe("volume");
+  });
+
+  it("rejects invalid capacities", () => {
+    expect(() => new HiddenContextCache(0)).toThrow(RangeError);
   });
 });
 

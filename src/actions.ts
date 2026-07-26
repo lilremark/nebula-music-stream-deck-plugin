@@ -31,6 +31,7 @@ import {
   steppedVolume,
   volumeFromTouch
 } from "./core/math.js";
+import { HiddenContextCache } from "./core/retained-cache.js";
 import { settingsEqual } from "./core/settings.js";
 import type { NebulaCommand } from "./protocol/schema.js";
 import {
@@ -73,7 +74,7 @@ interface RefreshState<T extends CommonSettings> {
   promise: Promise<void> | undefined;
 }
 
-const FEEDBACK_CACHE_RETENTION_MS = 10 * 60 * 1_000;
+const MAX_RETAINED_ACTIONS = 64;
 
 abstract class ResponsiveAction<
   T extends CommonSettings = CommonSettings
@@ -88,7 +89,7 @@ abstract class ResponsiveAction<
   readonly #settings = new Map<string, T>();
   readonly #errors = new Map<string, string>();
   readonly #errorTimers = new Map<string, NodeJS.Timeout>();
-  readonly #cacheEvictionTimers = new Map<string, NodeJS.Timeout>();
+  readonly #retainedActions = new HiddenContextCache(MAX_RETAINED_ACTIONS);
 
   constructor(protected readonly service: NebulaService) {
     super();
@@ -107,9 +108,7 @@ abstract class ResponsiveAction<
   }
 
   override async onWillAppear(event: WillAppearEvent<T>): Promise<void> {
-    const evictionTimer = this.#cacheEvictionTimers.get(event.action.id);
-    if (evictionTimer) clearTimeout(evictionTimer);
-    this.#cacheEvictionTimers.delete(event.action.id);
+    this.#retainedActions.show(event.action.id);
     const previousSettings = this.#settings.get(event.action.id);
     this.#settings.set(event.action.id, event.payload.settings);
     if (previousSettings && !settingsEqual(previousSettings, event.payload.settings)) {
@@ -124,15 +123,7 @@ abstract class ResponsiveAction<
     const timer = this.#errorTimers.get(event.action.id);
     if (timer) clearTimeout(timer);
     this.#errorTimers.delete(event.action.id);
-    const previousEviction = this.#cacheEvictionTimers.get(event.action.id);
-    if (previousEviction) clearTimeout(previousEviction);
-    const eviction = setTimeout(() => {
-      this.#settings.delete(event.action.id);
-      this.clearFeedbackCache(event.action.id);
-      this.#cacheEvictionTimers.delete(event.action.id);
-    }, FEEDBACK_CACHE_RETENTION_MS);
-    eviction.unref();
-    this.#cacheEvictionTimers.set(event.action.id, eviction);
+    this.retainHiddenFeedbackCache(event.action.id);
   }
 
   override async onDidReceiveSettings(event: DidReceiveSettingsEvent<T>): Promise<void> {
@@ -280,6 +271,13 @@ abstract class ResponsiveAction<
     this.#titles.delete(actionId);
     this.#states.delete(actionId);
     this.#feedbackDispatcher.clear(actionId);
+  }
+
+  private retainHiddenFeedbackCache(actionId: string): void {
+    const evictedActionId = this.#retainedActions.hide(actionId);
+    if (!evictedActionId) return;
+    this.#settings.delete(evictedActionId);
+    this.clearFeedbackCache(evictedActionId);
   }
 }
 
