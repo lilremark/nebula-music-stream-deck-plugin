@@ -4,11 +4,14 @@ type Feedback = Record<string, string | number>;
 
 interface FeedbackLane<T> {
   target: T;
-  desired: Feedback;
-  pending: Feedback;
+  desiredFull: Feedback;
+  acknowledged: Feedback | undefined;
   inFlight: boolean;
   lastSentAt: number;
   timer: NodeJS.Timeout | undefined;
+  generation: number;
+  revision: number;
+  failedRevision: number | undefined;
 }
 
 /**
@@ -26,29 +29,49 @@ export class LatestFeedbackDispatcher<T> {
   update(laneId: string, target: T, feedback: Feedback): void {
     const lane = this.#lanes.get(laneId) ?? {
       target,
-      desired: {},
-      pending: {},
+      desiredFull: {},
+      acknowledged: undefined,
       inFlight: false,
       lastSentAt: 0,
-      timer: undefined
+      timer: undefined,
+      generation: 0,
+      revision: 0,
+      failedRevision: undefined
     };
     lane.target = target;
-    const changed = changedFeedback(lane.desired, feedback);
+    const changed = changedFeedback(lane.desiredFull, feedback);
     if (Object.keys(changed).length === 0) return;
-    lane.desired = { ...lane.desired, ...changed };
-    lane.pending = { ...lane.pending, ...changed };
+    lane.desiredFull = { ...lane.desiredFull, ...changed };
+    lane.revision += 1;
     this.#lanes.set(laneId, lane);
     this.pump(laneId, lane);
   }
 
   clear(laneId: string): void {
     const lane = this.#lanes.get(laneId);
-    if (lane?.timer) clearTimeout(lane.timer);
-    this.#lanes.delete(laneId);
+    if (!lane) return;
+    if (lane.timer) clearTimeout(lane.timer);
+    lane.timer = undefined;
+    lane.desiredFull = {};
+    lane.acknowledged = undefined;
+    lane.generation += 1;
+    lane.revision += 1;
+    lane.failedRevision = undefined;
+    if (!lane.inFlight) this.#lanes.delete(laneId);
   }
 
   private pump(laneId: string, lane: FeedbackLane<T>): void {
-    if (lane.inFlight || lane.timer || Object.keys(lane.pending).length === 0) return;
+    if (lane.inFlight || lane.timer) return;
+    if (Object.keys(lane.desiredFull).length === 0) {
+      this.#lanes.delete(laneId);
+      return;
+    }
+    if (lane.failedRevision === lane.revision) return;
+    const feedback =
+      lane.acknowledged === undefined
+        ? lane.desiredFull
+        : changedFeedback(lane.acknowledged, lane.desiredFull);
+    if (Object.keys(feedback).length === 0) return;
     const delay = Math.max(0, lane.lastSentAt + this.minimumIntervalMs - Date.now());
     if (delay > 0) {
       lane.timer = setTimeout(() => {
@@ -59,13 +82,20 @@ export class LatestFeedbackDispatcher<T> {
       return;
     }
 
-    const feedback = lane.pending;
-    lane.pending = {};
     lane.inFlight = true;
     lane.lastSentAt = Date.now();
+    const generation = lane.generation;
+    const revision = lane.revision;
     void this.send(lane.target, feedback)
+      .then(() => {
+        if (lane.generation !== generation) return;
+        lane.acknowledged = { ...(lane.acknowledged ?? {}), ...feedback };
+        lane.failedRevision = undefined;
+      })
       .catch(() => {
-        lane.desired = {};
+        if (lane.generation !== generation) return;
+        lane.acknowledged = undefined;
+        lane.failedRevision = revision;
       })
       .finally(() => {
         lane.inFlight = false;

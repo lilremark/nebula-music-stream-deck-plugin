@@ -201,6 +201,84 @@ describe("control dispatch", () => {
       vi.useRealTimers();
     }
   });
+
+  it("keeps an in-flight barrier when feedback is invalidated", async () => {
+    let finishFirst: (() => void) | undefined;
+    const first = new Promise<void>((resolve) => {
+      finishFirst = resolve;
+    });
+    const send = vi
+      .fn<(target: string, feedback: Record<string, string | number>) => Promise<void>>()
+      .mockImplementationOnce(() => first)
+      .mockResolvedValue();
+    const dispatcher = new LatestFeedbackDispatcher(send, 0);
+
+    dispatcher.update("dial", "target", { state: "ACTIVE", value: "20%" });
+    dispatcher.clear("dial");
+    dispatcher.update("dial", "target", { state: "MUTED", value: "0%" });
+    expect(send).toHaveBeenCalledTimes(1);
+
+    finishFirst?.();
+    await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(2));
+    expect(send).toHaveBeenLastCalledWith("target", {
+      state: "MUTED",
+      value: "0%"
+    });
+  });
+
+  it("resends a complete latest model after a failed dial write", async () => {
+    let failFirst: ((error: Error) => void) | undefined;
+    const first = new Promise<void>((_resolve, reject) => {
+      failFirst = reject;
+    });
+    const send = vi
+      .fn<(target: string, feedback: Record<string, string | number>) => Promise<void>>()
+      .mockImplementationOnce(() => first)
+      .mockResolvedValue();
+    const dispatcher = new LatestFeedbackDispatcher(send, 0);
+
+    dispatcher.update("dial", "target", {
+      state: "PLAYING",
+      trackTitle: "Song",
+      time: "0:01",
+      progress: 1
+    });
+    dispatcher.update("dial", "target", { time: "0:02", progress: 2 });
+    failFirst?.(new Error("device unavailable"));
+
+    await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(2));
+    expect(send).toHaveBeenLastCalledWith("target", {
+      state: "PLAYING",
+      trackTitle: "Song",
+      time: "0:02",
+      progress: 2
+    });
+  });
+
+  it("sends only changed Now Playing progress elements after initialization", async () => {
+    const send = vi.fn().mockResolvedValue(undefined);
+    const dispatcher = new LatestFeedbackDispatcher(send, 0);
+    dispatcher.update("dial", "target", {
+      state: "PLAYING",
+      trackTitle: "Song",
+      artist: "Artist",
+      album: "Album",
+      time: "0:01 / 3:00",
+      progress: 1
+    });
+    await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+
+    dispatcher.update("dial", "target", {
+      state: "PLAYING",
+      time: "0:02 / 3:00",
+      progress: 2
+    });
+    await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(2));
+    expect(send).toHaveBeenLastCalledWith("target", {
+      time: "0:02 / 3:00",
+      progress: 2
+    });
+  });
 });
 
 describe("settings synchronization", () => {
