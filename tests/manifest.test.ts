@@ -23,7 +23,7 @@ describe("Stream Deck manifest", () => {
     ]);
   });
 
-  it("renders Now Playing artwork and metadata as one atomic key image", async () => {
+  it("keeps Now Playing metadata in a separate layer from its artwork", async () => {
     const manifest = JSON.parse(
       await readFile("com.lilremark.nebula-music.sdPlugin/manifest.json", "utf8")
     ) as { Actions: ManifestAction[] };
@@ -32,6 +32,6 @@ describe("Stream Deck manifest", () => {
     );
 
     expect(nowPlaying?.States).toHaveLength(1);
-    expect(nowPlaying?.States[0]?.ShowTitle).toBe(false);
+    expect(nowPlaying?.States[0]?.ShowTitle).toBe(true);
   });
 });

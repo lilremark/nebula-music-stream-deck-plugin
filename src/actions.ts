@@ -14,6 +14,7 @@ import {
 import { CommandDispatcher } from "./core/command-dispatcher.js";
 import { LatestFeedbackDispatcher } from "./core/feedback-dispatcher.js";
 import { nowPlayingPressCommand } from "./core/interaction.js";
+import { staticKeyMetadataTitle } from "./core/marquee.js";
 import {
   clamp,
   seekPositionFromTouch,
@@ -30,7 +31,6 @@ import type { NebulaCommand } from "./protocol/schema.js";
 import {
   formatTime,
   nowPlayingKeyImage,
-  nowPlayingSvg,
   playlistSvg,
   statusSvg,
   volumeKeyState
@@ -76,6 +76,7 @@ abstract class ResponsiveAction<
   readonly #feedbackDispatcher: LatestFeedbackDispatcher<Action<T>>;
   readonly #refreshes = new Map<string, RefreshState<T>>();
   readonly #images = new Map<string, string | undefined>();
+  readonly #titles = new Map<string, string>();
   readonly #states = new Map<string, number>();
   readonly #settings = new Map<string, T>();
   readonly #lastAlertAt = new Map<string, number>();
@@ -195,6 +196,12 @@ abstract class ResponsiveAction<
     this.#states.set(target.id, state);
   }
 
+  protected async setTitle(target: Action<T>, title: string): Promise<void> {
+    if (!target.isKey() || this.#titles.get(target.id) === title) return;
+    await target.setTitle(title);
+    this.#titles.set(target.id, title);
+  }
+
   protected setFeedback(
     target: Action<T>,
     feedback: Record<string, string | number>
@@ -216,6 +223,7 @@ abstract class ResponsiveAction<
     for (const key of this.#images.keys()) {
       if (key.startsWith(`${actionId}:`)) this.#images.delete(key);
     }
+    this.#titles.delete(actionId);
     this.#states.delete(actionId);
     this.#feedbackDispatcher.clear(actionId);
   }
@@ -286,14 +294,8 @@ export class NowPlayingAction extends ResponsiveAction {
         image: nowPlayingKeyImage(snapshot),
         hasArtwork: Boolean(snapshot?.track?.artworkDataUrl)
       });
-      const composite =
-        snapshot?.track === undefined || snapshot.track === null
-          ? nowPlayingSvg(snapshot)
-          : nowPlayingSvg({
-              ...snapshot,
-              track: { ...snapshot.track, artworkDataUrl: image }
-            });
-      await this.setImage(target, composite);
+      await this.setImage(target, image);
+      await this.setTitle(target, staticKeyMetadataTitle(snapshot?.track ?? undefined));
       return;
     }
     if (target.isDial()) {
