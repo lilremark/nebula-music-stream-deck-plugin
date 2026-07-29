@@ -24,7 +24,7 @@ import {
   steppedVolume,
   volumeFromTouch
 } from "./core/math.js";
-import { FrozenArtworkCache } from "./core/now-playing-key.js";
+import { FrozenNowPlayingKeyCache } from "./core/now-playing-key.js";
 import { HiddenContextCache } from "./core/retained-cache.js";
 import { settingsEqual } from "./core/settings.js";
 import type { NebulaCommand } from "./protocol/schema.js";
@@ -238,7 +238,13 @@ abstract class ResponsiveAction<
 
 @action({ UUID: "com.lilremark.nebula-music.now-playing" })
 export class NowPlayingAction extends ResponsiveAction {
-  readonly #artwork = new FrozenArtworkCache();
+  readonly #keyFrames = new FrozenNowPlayingKeyCache(MAX_RETAINED_ACTIONS);
+  readonly #manualRefreshes = new Set<string>();
+
+  override onKeyDown(event: KeyDownEvent): void {
+    this.#manualRefreshes.add(event.action.id);
+    void this.requestRefresh(event.action, "state");
+  }
 
   override onDialDown(event: DialDownEvent): void {
     const command = nowPlayingPressCommand("dial");
@@ -290,12 +296,17 @@ export class NowPlayingAction extends ResponsiveAction {
       const trackKey = snapshot?.track
         ? `${snapshot.sessionId}:${snapshot.track.id}`
         : `idle:${snapshot?.sessionId ?? "disconnected"}`;
-      const image = this.#artwork.select(trackKey, {
-        image: nowPlayingKeyImage(snapshot),
-        hasArtwork: Boolean(snapshot?.track?.artworkDataUrl)
-      });
-      await this.setImage(target, image);
-      await this.setTitle(target, staticKeyMetadataTitle(snapshot?.track ?? undefined));
+      const frame = this.#keyFrames.select(
+        target.id,
+        trackKey,
+        {
+          image: nowPlayingKeyImage(snapshot),
+          title: staticKeyMetadataTitle(snapshot?.track ?? undefined)
+        },
+        this.#manualRefreshes.delete(target.id)
+      );
+      await this.setImage(target, frame.image);
+      await this.setTitle(target, frame.title);
       return;
     }
     if (target.isDial()) {

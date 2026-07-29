@@ -1,35 +1,41 @@
-export interface ArtworkCandidate {
+export interface NowPlayingKeyFrame {
   image: string;
-  hasArtwork: boolean;
+  title: string;
 }
 
-interface FrozenArtwork extends ArtworkCandidate {
+interface FrozenFrame {
   trackKey: string;
+  frame: NowPlayingKeyFrame;
 }
 
-export class FrozenArtworkCache {
-  readonly #entries = new Map<string, FrozenArtwork>();
+export class FrozenNowPlayingKeyCache {
+  readonly #entries = new Map<string, FrozenFrame>();
 
-  constructor(private readonly capacity = 32) {
+  constructor(private readonly capacity = 64) {
     if (!Number.isInteger(capacity) || capacity < 1) {
-      throw new RangeError("Artwork cache capacity must be a positive integer");
+      throw new RangeError("Now Playing key cache capacity must be a positive integer");
     }
   }
 
-  select(trackKey: string, candidate: ArtworkCandidate): string {
-    const previous = this.#entries.get(trackKey);
+  select(
+    contextId: string,
+    trackKey: string,
+    candidate: NowPlayingKeyFrame,
+    forceRefresh = false
+  ): NowPlayingKeyFrame {
+    const previous = this.#entries.get(contextId);
     const selected =
-      !previous || (!previous.hasArtwork && candidate.hasArtwork)
-        ? { trackKey, ...candidate }
+      !previous || previous.trackKey !== trackKey || forceRefresh
+        ? { trackKey, frame: candidate }
         : previous;
 
-    this.#entries.delete(trackKey);
-    this.#entries.set(trackKey, selected);
+    this.#entries.delete(contextId);
+    this.#entries.set(contextId, selected);
     while (this.#entries.size > this.capacity) {
       const oldest = this.#entries.keys().next().value;
       if (oldest === undefined) break;
       this.#entries.delete(oldest);
     }
-    return selected.image;
+    return selected.frame;
   }
 }
