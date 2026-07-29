@@ -55,3 +55,21 @@ export function keyMetadataTitle(metadata: MarqueeMetadata | undefined, frame: n
     .filter(Boolean)
     .join("\n");
 }
+
+export function staticKeyMetadataTitle(metadata: MarqueeMetadata | undefined): string {
+  if (!metadata) return "Nothing playing";
+
+  return [
+    truncateMetadata(metadata.title, KEY_MARQUEE_LIMITS.title),
+    truncateMetadata(metadata.album ?? "", KEY_MARQUEE_LIMITS.album),
+    truncateMetadata(metadata.artist, KEY_MARQUEE_LIMITS.artist)
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function truncateMetadata(value: string, limit: number): string {
+  const characters = Array.from(value.trim());
+  if (characters.length <= limit) return value;
+  return `${characters.slice(0, Math.max(1, limit - 1)).join("")}…`;
+}

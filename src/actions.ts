@@ -12,16 +12,8 @@ import {
   type WillDisappearEvent
 } from "@elgato/streamdeck";
 import { CommandDispatcher } from "./core/command-dispatcher.js";
-import { commandErrorLabel } from "./core/errors.js";
 import { LatestFeedbackDispatcher } from "./core/feedback-dispatcher.js";
 import { nowPlayingPressCommand } from "./core/interaction.js";
-import {
-  DIAL_MARQUEE_LIMITS,
-  KEY_MARQUEE_LIMITS,
-  keyMetadataTitle,
-  marqueeText,
-  metadataNeedsMarquee
-} from "./core/marquee.js";
 import {
   clamp,
   seekPositionFromTouch,
@@ -31,14 +23,17 @@ import {
   steppedVolume,
   volumeFromTouch
 } from "./core/math.js";
+import { FrozenArtworkCache } from "./core/now-playing-key.js";
+import { HiddenContextCache } from "./core/retained-cache.js";
+import { settingsEqual } from "./core/settings.js";
 import type { NebulaCommand } from "./protocol/schema.js";
 import {
   formatTime,
   nowPlayingKeyImage,
+  nowPlayingSvg,
   playlistSvg,
   statusSvg,
-  volumeKeyState,
-  volumeSvg
+  volumeKeyState
 } from "./render/svg.js";
 import type { NebulaService, OptimisticOperation, ServiceChangeKind } from "./service.js";
 
@@ -72,19 +67,19 @@ interface RefreshState<T extends CommonSettings> {
   promise: Promise<void> | undefined;
 }
 
+const MAX_RETAINED_ACTIONS = 64;
+
 abstract class ResponsiveAction<
   T extends CommonSettings = CommonSettings
 > extends SingletonAction<T> {
   readonly #dispatcher: CommandDispatcher<QueuedCommand>;
   readonly #feedbackDispatcher: LatestFeedbackDispatcher<Action<T>>;
   readonly #refreshes = new Map<string, RefreshState<T>>();
-  readonly #images = new Map<string, string>();
-  readonly #imageUpdatedAt = new Map<string, number>();
-  readonly #titles = new Map<string, string>();
+  readonly #images = new Map<string, string | undefined>();
   readonly #states = new Map<string, number>();
   readonly #settings = new Map<string, T>();
-  readonly #errors = new Map<string, string>();
-  readonly #errorTimers = new Map<string, NodeJS.Timeout>();
+  readonly #lastAlertAt = new Map<string, number>();
+  readonly #retainedActions = new HiddenContextCache(MAX_RETAINED_ACTIONS);
 
   constructor(protected readonly service: NebulaService) {
     super();
@@ -103,24 +98,21 @@ abstract class ResponsiveAction<
   }
 
   override async onWillAppear(event: WillAppearEvent<T>): Promise<void> {
+    this.#retainedActions.show(event.action.id);
     this.#settings.set(event.action.id, event.payload.settings);
-    this.clearFeedbackCache(event.action.id);
     await this.requestRefresh(event.action);
   }
 
   override onWillDisappear(event: WillDisappearEvent<T>): void {
     this.#refreshes.delete(event.action.id);
-    this.#settings.delete(event.action.id);
-    this.#errors.delete(event.action.id);
-    const timer = this.#errorTimers.get(event.action.id);
-    if (timer) clearTimeout(timer);
-    this.#errorTimers.delete(event.action.id);
-    this.clearFeedbackCache(event.action.id);
+    this.#lastAlertAt.delete(event.action.id);
+    this.retainHiddenFeedbackCache(event.action.id);
   }
 
   override async onDidReceiveSettings(event: DidReceiveSettingsEvent<T>): Promise<void> {
+    const previousSettings = this.#settings.get(event.action.id);
+    if (previousSettings && settingsEqual(previousSettings, event.payload.settings)) return;
     this.#settings.set(event.action.id, event.payload.settings);
-    this.clearFeedbackCache(event.action.id);
     await this.requestRefresh(event.action);
   }
 
@@ -158,7 +150,8 @@ abstract class ResponsiveAction<
 
   protected execute(target: Action<T>, command: NebulaCommand): void {
     void this.service.command(command).catch((error: unknown) => {
-      void this.showCommandError(target, error).catch(() => {});
+      void error;
+      void this.showAlert(target);
     });
   }
 
@@ -168,35 +161,32 @@ abstract class ResponsiveAction<
       `${lane}:${target.id}`,
       operation ? { command, operation } : { command },
       (error) => {
-        void this.showCommandError(target, error).catch(() => {});
+        void error;
+        void this.showAlert(target);
       }
     );
   }
 
+  protected async showAlert(target: Action<T>, minimumIntervalMs = 1_000): Promise<void> {
+    const now = Date.now();
+    if (now - (this.#lastAlertAt.get(target.id) ?? 0) < minimumIntervalMs) return;
+    this.#lastAlertAt.set(target.id, now);
+    await target.showAlert();
+  }
+
   protected async setImage(
     target: Action<T>,
-    image: string,
-    minimumIntervalMs = 0,
+    image: string | undefined,
     state?: 0 | 1
   ): Promise<void> {
     if (!target.isKey()) return;
     const cacheKey = `${target.id}:${state ?? "all"}`;
-    if (this.#images.get(cacheKey) === image) return;
-    if (Date.now() - (this.#imageUpdatedAt.get(cacheKey) ?? 0) < minimumIntervalMs) return;
+    if (this.#images.has(cacheKey) && this.#images.get(cacheKey) === image) return;
     await target.setImage(image, {
       target: Target.HardwareAndSoftware,
       ...(state !== undefined ? { state } : {})
     });
     this.#images.set(cacheKey, image);
-    this.#imageUpdatedAt.set(cacheKey, Date.now());
-  }
-
-  protected async setTitle(target: Action<T>, title: string): Promise<void> {
-    if (this.#titles.get(target.id) === title) return;
-    if (target.isKey()) await target.setTitle(title);
-    else if (target.isDial()) await target.setTitle(title);
-    else return;
-    this.#titles.set(target.id, title);
   }
 
   protected async setState(target: Action<T>, state: number): Promise<void> {
@@ -218,71 +208,29 @@ abstract class ResponsiveAction<
       state.queued = false;
       const kind = state.kind;
       state.kind = "progress";
-      const error = this.#errors.get(state.target.id);
-      if (error) await this.renderCommandError(state.target, error);
-      else await this.refresh(state.target, kind);
+      await this.refresh(state.target, kind);
     }
-  }
-
-  private async showCommandError(target: Action<T>, error: unknown): Promise<void> {
-    const label = commandErrorLabel(error);
-    await target.showAlert();
-    this.#errors.set(target.id, label);
-    this.clearFeedbackCache(target.id);
-    await this.requestRefresh(target, "state");
-    const previousTimer = this.#errorTimers.get(target.id);
-    if (previousTimer) clearTimeout(previousTimer);
-    const reset = setTimeout(() => {
-      this.#errors.delete(target.id);
-      this.#errorTimers.delete(target.id);
-      this.clearFeedbackCache(target.id);
-      void this.requestRefresh(target, "state");
-    }, 1_500);
-    reset.unref();
-    this.#errorTimers.set(target.id, reset);
-  }
-
-  private async renderCommandError(target: Action<T>, label: string): Promise<void> {
-    if (target.isKey()) {
-      await this.setImage(target, statusSvg("Command failed", label, "!"));
-      await this.setTitle(target, "");
-      return;
-    }
-    if (target.isDial()) await this.setTitle(target, label);
   }
 
   private clearFeedbackCache(actionId: string): void {
     for (const key of this.#images.keys()) {
       if (key.startsWith(`${actionId}:`)) this.#images.delete(key);
     }
-    for (const key of this.#imageUpdatedAt.keys()) {
-      if (key.startsWith(`${actionId}:`)) this.#imageUpdatedAt.delete(key);
-    }
-    this.#titles.delete(actionId);
     this.#states.delete(actionId);
     this.#feedbackDispatcher.clear(actionId);
+  }
+
+  private retainHiddenFeedbackCache(actionId: string): void {
+    const evictedActionId = this.#retainedActions.hide(actionId);
+    if (!evictedActionId) return;
+    this.#settings.delete(evictedActionId);
+    this.clearFeedbackCache(evictedActionId);
   }
 }
 
 @action({ UUID: "com.lilremark.nebula-music.now-playing" })
 export class NowPlayingAction extends ResponsiveAction {
-  #marqueeFrame = 0;
-  #marqueeTrackId: string | undefined;
-
-  constructor(service: NebulaService) {
-    super(service);
-    const marqueeTimer = setInterval(() => {
-      const track = service.snapshot?.track;
-      if (!track || !metadataNeedsMarquee(track, DIAL_MARQUEE_LIMITS)) return;
-      this.#marqueeFrame += 1;
-      const keyNeedsMarquee = metadataNeedsMarquee(track, KEY_MARQUEE_LIMITS);
-      this.actions.forEach((target) => {
-        if (target.isKey() && !keyNeedsMarquee) return;
-        void this.requestRefresh(target, "progress");
-      });
-    }, 250);
-    marqueeTimer.unref();
-  }
+  readonly #artwork = new FrozenArtworkCache();
 
   override onDialDown(event: DialDownEvent): void {
     const command = nowPlayingPressCommand("dial");
@@ -328,34 +276,30 @@ export class NowPlayingAction extends ResponsiveAction {
     return kind === "state" || kind === "progress";
   }
 
-  protected override async refresh(target: Action): Promise<void> {
+  protected override async refresh(target: Action, kind: ServiceChangeKind): Promise<void> {
     const snapshot = this.service.snapshot;
-    const trackId = snapshot?.track?.id;
-    if (trackId !== this.#marqueeTrackId) {
-      this.#marqueeTrackId = trackId;
-      this.#marqueeFrame = 0;
-    }
     if (target.isKey()) {
-      await this.setImage(target, nowPlayingKeyImage(snapshot));
-      await this.setTitle(
-        target,
-        keyMetadataTitle(snapshot?.track ?? undefined, this.#marqueeFrame)
-      );
+      const trackKey = snapshot?.track
+        ? `${snapshot.sessionId}:${snapshot.track.id}`
+        : `idle:${snapshot?.sessionId ?? "disconnected"}`;
+      const image = this.#artwork.select(trackKey, {
+        image: nowPlayingKeyImage(snapshot),
+        hasArtwork: Boolean(snapshot?.track?.artworkDataUrl)
+      });
+      const composite =
+        snapshot?.track === undefined || snapshot.track === null
+          ? nowPlayingSvg(snapshot)
+          : nowPlayingSvg({
+              ...snapshot,
+              track: { ...snapshot.track, artworkDataUrl: image }
+            });
+      await this.setImage(target, composite);
       return;
     }
     if (target.isDial()) {
       const track = snapshot?.track;
-      await this.setFeedback(target, {
+      const progress = {
         state: snapshot?.playing ? "PLAYING" : "PAUSED",
-        trackTitle: track
-          ? marqueeText(track.title, DIAL_MARQUEE_LIMITS.title, this.#marqueeFrame)
-          : "Nothing playing",
-        artist: track
-          ? marqueeText(track.artist, DIAL_MARQUEE_LIMITS.artist, this.#marqueeFrame)
-          : "",
-        album: track
-          ? marqueeText(track.album ?? "", DIAL_MARQUEE_LIMITS.album, this.#marqueeFrame)
-          : "",
         time: snapshot
           ? `${formatTime(snapshot.positionSeconds)} / ${formatTime(snapshot.durationSeconds)}`
           : "",
@@ -363,7 +307,18 @@ export class NowPlayingAction extends ResponsiveAction {
           snapshot && snapshot.durationSeconds > 0
             ? Math.round((snapshot.positionSeconds / snapshot.durationSeconds) * 100)
             : 0
-      });
+      };
+      await this.setFeedback(
+        target,
+        kind === "progress"
+          ? progress
+          : {
+              ...progress,
+              trackTitle: track?.title ?? "Nothing playing",
+              artist: track?.artist ?? "",
+              album: track?.album ?? ""
+            }
+      );
     }
   }
 }
@@ -391,7 +346,6 @@ export class PlayPauseAction extends ResponsiveAction<PlaybackSettings> {
   protected override async refresh(target: Action<PlaybackSettings>): Promise<void> {
     if (!target.isKey()) return;
     await this.setState(target, this.service.snapshot?.playing ? 1 : 0);
-    await this.setTitle(target, "");
   }
 }
 
@@ -402,8 +356,8 @@ abstract class TransportAction extends ResponsiveAction {
     this.execute(event.action, { name: this.commandName });
   }
 
-  protected override async refresh(target: Action): Promise<void> {
-    if (target.isKey()) await this.setTitle(target, "");
+  protected override refresh(): Promise<void> {
+    return Promise.resolve();
   }
 }
 
@@ -446,13 +400,12 @@ export class VolumeAction extends ResponsiveAction {
     return kind === "state" || kind === "progress";
   }
 
-  protected override async refresh(target: Action, kind: ServiceChangeKind): Promise<void> {
+  protected override async refresh(target: Action): Promise<void> {
     const snapshot = this.service.snapshot;
     if (target.isKey()) {
       const state = volumeKeyState(snapshot);
+      await this.setImage(target, undefined, state);
       await this.setState(target, state);
-      await this.setImage(target, volumeSvg(snapshot), kind === "progress" ? 1_000 : 0, state);
-      await this.setTitle(target, "");
       return;
     }
     if (target.isDial()) {
@@ -477,7 +430,7 @@ export class VolumeAction extends ResponsiveAction {
 export class SpeedPitchAction extends ResponsiveAction<PlaybackTuningSettings> {
   override async onDialDown(event: DialDownEvent): Promise<void> {
     if (!this.service.supportsActiveCapability("playbackTuning")) {
-      await event.action.showAlert();
+      await this.showAlert(event.action);
       return;
     }
     const enabled = !(this.service.snapshot?.pitchCorrection ?? true);
@@ -489,7 +442,7 @@ export class SpeedPitchAction extends ResponsiveAction<PlaybackTuningSettings> {
 
   override async onDialRotate(event: DialRotateEvent<PlaybackTuningSettings>): Promise<void> {
     if (!this.service.supportsActiveCapability("playbackTuning")) {
-      await event.action.showAlert();
+      await this.showAlert(event.action);
       return;
     }
     const ticks = event.payload.ticks;
@@ -545,7 +498,6 @@ export class PlaylistAction extends ResponsiveAction<PlaylistSettings> {
     if (!target.isKey()) return;
     const settings = this.settingsFor(target);
     await this.setImage(target, playlistSvg(settings.playlistName ?? "Choose playlist"));
-    await this.setTitle(target, "");
   }
 }
 
@@ -556,7 +508,7 @@ export class PlaylistBrowserAction extends ResponsiveAction {
   override onDialRotate(event: DialRotateEvent): void {
     const playlists = this.service.snapshot?.playlists ?? [];
     if (playlists.length === 0) {
-      void event.action.showAlert();
+      void this.showAlert(event.action);
       return;
     }
     const current = this.#selected.get(event.action.id) ?? 0;
@@ -590,7 +542,7 @@ export class PlaylistBrowserAction extends ResponsiveAction {
     const playlists = this.service.snapshot?.playlists ?? [];
     const playlist = playlists[this.#selected.get(target.id) ?? 0];
     if (!playlist) {
-      await target.showAlert();
+      await this.showAlert(target);
       return;
     }
     this.execute(target, { name: "startPlaylist", playlistId: playlist.id });
@@ -617,7 +569,6 @@ export class ConnectionAction extends ResponsiveAction {
             ? `Code ${status.pairingCode}`
             : "Press for code";
     await this.setImage(target, statusSvg("Nebula Link", subtitle, "link"));
-    await this.setTitle(target, "");
   }
 
   protected override shouldRefresh(kind: ServiceChangeKind): boolean {

@@ -6,7 +6,8 @@ import {
   DIAL_MARQUEE_LIMITS,
   keyMetadataTitle,
   marqueeText,
-  metadataNeedsMarquee
+  metadataNeedsMarquee,
+  staticKeyMetadataTitle
 } from "../src/core/marquee.js";
 import {
   clamp,
@@ -17,6 +18,7 @@ import {
   steppedVolume,
   volumeFromTouch
 } from "../src/core/math.js";
+import { FrozenArtworkCache } from "../src/core/now-playing-key.js";
 import { commandErrorLabel, NebulaCommandError } from "../src/core/errors.js";
 import {
   acceptsConnectionCommand,
@@ -24,7 +26,9 @@ import {
   PLAYLIST_ACTION,
   propertyInspectorScope
 } from "../src/core/property-inspector.js";
+import { HiddenContextCache } from "../src/core/retained-cache.js";
 import { selectActiveInstance, type InstanceCandidate } from "../src/core/selection.js";
+import { settingsEqual } from "../src/core/settings.js";
 import { commandSchema, PROTOCOL, parseBrowserMessage } from "../src/protocol/schema.js";
 import {
   dialArtworkFallbackSvg,
@@ -197,6 +201,134 @@ describe("control dispatch", () => {
       vi.useRealTimers();
     }
   });
+
+  it("keeps an in-flight barrier when feedback is invalidated", async () => {
+    let finishFirst: (() => void) | undefined;
+    const first = new Promise<void>((resolve) => {
+      finishFirst = resolve;
+    });
+    const send = vi
+      .fn<(target: string, feedback: Record<string, string | number>) => Promise<void>>()
+      .mockImplementationOnce(() => first)
+      .mockResolvedValue();
+    const dispatcher = new LatestFeedbackDispatcher(send, 0);
+
+    dispatcher.update("dial", "target", { state: "ACTIVE", value: "20%" });
+    dispatcher.clear("dial");
+    dispatcher.update("dial", "target", { state: "MUTED", value: "0%" });
+    expect(send).toHaveBeenCalledTimes(1);
+
+    finishFirst?.();
+    await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(2));
+    expect(send).toHaveBeenLastCalledWith("target", {
+      state: "MUTED",
+      value: "0%"
+    });
+  });
+
+  it("resends a complete latest model after a failed dial write", async () => {
+    let failFirst: ((error: Error) => void) | undefined;
+    const first = new Promise<void>((_resolve, reject) => {
+      failFirst = reject;
+    });
+    const send = vi
+      .fn<(target: string, feedback: Record<string, string | number>) => Promise<void>>()
+      .mockImplementationOnce(() => first)
+      .mockResolvedValue();
+    const dispatcher = new LatestFeedbackDispatcher(send, 0);
+
+    dispatcher.update("dial", "target", {
+      state: "PLAYING",
+      trackTitle: "Song",
+      time: "0:01",
+      progress: 1
+    });
+    dispatcher.update("dial", "target", { time: "0:02", progress: 2 });
+    failFirst?.(new Error("device unavailable"));
+
+    await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(2));
+    expect(send).toHaveBeenLastCalledWith("target", {
+      state: "PLAYING",
+      trackTitle: "Song",
+      time: "0:02",
+      progress: 2
+    });
+  });
+
+  it("sends only changed Now Playing progress elements after initialization", async () => {
+    const send = vi.fn().mockResolvedValue(undefined);
+    const dispatcher = new LatestFeedbackDispatcher(send, 0);
+    dispatcher.update("dial", "target", {
+      state: "PLAYING",
+      trackTitle: "Song",
+      artist: "Artist",
+      album: "Album",
+      time: "0:01 / 3:00",
+      progress: 1
+    });
+    await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+
+    dispatcher.update("dial", "target", {
+      state: "PLAYING",
+      time: "0:02 / 3:00",
+      progress: 2
+    });
+    await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(2));
+    expect(send).toHaveBeenLastCalledWith("target", {
+      time: "0:02 / 3:00",
+      progress: 2
+    });
+  });
+});
+
+describe("settings synchronization", () => {
+  it("treats repeated settings payloads as unchanged", () => {
+    expect(settingsEqual({ seekStepSeconds: 5 }, { seekStepSeconds: 5 })).toBe(true);
+    expect(
+      settingsEqual(
+        { playlistId: "playlist", playlistName: "Favorites" },
+        { playlistName: "Favorites", playlistId: "playlist" }
+      )
+    ).toBe(true);
+    expect(settingsEqual({ volumeStepPercent: 2 }, { volumeStepPercent: 5 })).toBe(false);
+    expect(settingsEqual({ volumeStepPercent: 2 }, {})).toBe(false);
+  });
+});
+
+describe("hardware feedback retention", () => {
+  it("retains entries until capacity pressure instead of elapsed time", () => {
+    vi.useFakeTimers();
+    try {
+      const cache = new HiddenContextCache(2);
+      expect(cache.hide("now-playing")).toBeUndefined();
+      vi.advanceTimersByTime(24 * 60 * 60 * 1_000);
+      expect(cache.hide("volume")).toBeUndefined();
+      expect(cache.hide("playlist")).toBe("now-playing");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("refreshes recency without evicting the touched entry", () => {
+    const cache = new HiddenContextCache(2);
+    cache.hide("now-playing");
+    cache.hide("volume");
+    expect(cache.hide("now-playing")).toBeUndefined();
+    expect(cache.hide("playlist")).toBe("volume");
+  });
+
+  it("removes visible entries from hidden-context eviction", () => {
+    const hidden = new HiddenContextCache(2);
+    hidden.hide("now-playing");
+    hidden.hide("volume");
+    hidden.show("now-playing");
+    expect(hidden.hide("playlist")).toBeUndefined();
+    expect(hidden.hide("speed-pitch")).toBe("volume");
+  });
+
+  it("rejects invalid capacities", () => {
+    expect(() => new HiddenContextCache(0)).toThrow(RangeError);
+  });
 });
 
 describe("Now Playing interaction", () => {
@@ -242,6 +374,48 @@ describe("metadata marquee", () => {
       )
     ).toBe(" title that is muc\nAlbum\nArtist");
     expect(keyMetadataTitle(undefined, 99)).toBe("Nothing playing");
+  });
+
+  it("uses stable truncated metadata on the Now Playing key", () => {
+    expect(
+      staticKeyMetadataTitle({
+        title: "A title that is much too long",
+        artist: "An artist whose name is also much too long",
+        album: "A very long album name that does not fit"
+      })
+    ).toBe("A title that is m…\nA very long album n…\nAn artist whose nam…");
+  });
+});
+
+describe("Now Playing key artwork", () => {
+  it("allows the first artwork arrival and then freezes it for the track", () => {
+    const artwork = new FrozenArtworkCache();
+    expect(artwork.select("session:track", { image: "fallback", hasArtwork: false })).toBe(
+      "fallback"
+    );
+    expect(artwork.select("session:track", { image: "cover-a", hasArtwork: true })).toBe("cover-a");
+    expect(artwork.select("session:track", { image: "cover-b", hasArtwork: true })).toBe("cover-a");
+    expect(artwork.select("new-session:track", { image: "cover-b", hasArtwork: true })).toBe(
+      "cover-b"
+    );
+  });
+
+  it("bounds retained track artwork without time-based expiry", () => {
+    vi.useFakeTimers();
+    try {
+      const artwork = new FrozenArtworkCache(2);
+      artwork.select("first", { image: "one", hasArtwork: true });
+      vi.advanceTimersByTime(24 * 60 * 60 * 1_000);
+      artwork.select("second", { image: "two", hasArtwork: true });
+      artwork.select("third", { image: "three", hasArtwork: true });
+      expect(artwork.select("first", { image: "one-new", hasArtwork: true })).toBe("one-new");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("rejects invalid capacities", () => {
+    expect(() => new FrozenArtworkCache(0)).toThrow(RangeError);
   });
 });
 

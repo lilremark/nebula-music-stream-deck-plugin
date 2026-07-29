@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 interface ManifestAction {
   UUID: string;
   DisableAutomaticStates?: boolean;
-  States: Array<{ Image: string }>;
+  States: Array<{ Image: string; ShowTitle?: boolean }>;
 }
 
 describe("Stream Deck manifest", () => {
@@ -21,5 +21,17 @@ describe("Stream Deck manifest", () => {
       "imgs/key-volume",
       "imgs/key-volume-muted"
     ]);
+  });
+
+  it("renders Now Playing artwork and metadata as one atomic key image", async () => {
+    const manifest = JSON.parse(
+      await readFile("com.lilremark.nebula-music.sdPlugin/manifest.json", "utf8")
+    ) as { Actions: ManifestAction[] };
+    const nowPlaying = manifest.Actions.find(
+      (action) => action.UUID === "com.lilremark.nebula-music.now-playing"
+    );
+
+    expect(nowPlaying?.States).toHaveLength(1);
+    expect(nowPlaying?.States[0]?.ShowTitle).toBe(false);
   });
 });

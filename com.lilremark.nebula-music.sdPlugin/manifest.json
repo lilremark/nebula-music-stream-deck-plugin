@@ -21,7 +21,7 @@
           "Image": "imgs/key-now-playing",
           "FontSize": 9,
           "FontStyle": "Bold",
-          "ShowTitle": true,
+          "ShowTitle": false,
           "TitleAlignment": "bottom",
           "TitleColor": "#FFFFFF"
         }
