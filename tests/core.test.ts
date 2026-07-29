@@ -18,7 +18,7 @@ import {
   steppedVolume,
   volumeFromTouch
 } from "../src/core/math.js";
-import { FrozenArtworkCache } from "../src/core/now-playing-key.js";
+import { FrozenNowPlayingKeyCache } from "../src/core/now-playing-key.js";
 import { commandErrorLabel, NebulaCommandError } from "../src/core/errors.js";
 import {
   acceptsConnectionCommand,
@@ -387,35 +387,57 @@ describe("metadata marquee", () => {
   });
 });
 
-describe("Now Playing key artwork", () => {
-  it("allows the first artwork arrival and then freezes it for the track", () => {
-    const artwork = new FrozenArtworkCache();
-    expect(artwork.select("session:track", { image: "fallback", hasArtwork: false })).toBe(
-      "fallback"
-    );
-    expect(artwork.select("session:track", { image: "cover-a", hasArtwork: true })).toBe("cover-a");
-    expect(artwork.select("session:track", { image: "cover-b", hasArtwork: true })).toBe("cover-a");
-    expect(artwork.select("new-session:track", { image: "cover-b", hasArtwork: true })).toBe(
-      "cover-b"
-    );
+describe("Now Playing key snapshots", () => {
+  it("freezes artwork and metadata until the track changes", () => {
+    const frames = new FrozenNowPlayingKeyCache();
+    expect(
+      frames.select("key", "session:track", { image: "fallback", title: "Original title" })
+    ).toEqual({ image: "fallback", title: "Original title" });
+    expect(
+      frames.select("key", "session:track", { image: "cover-a", title: "Edited title" })
+    ).toEqual({ image: "fallback", title: "Original title" });
+    expect(
+      frames.select("key", "session:next-track", { image: "cover-b", title: "Next title" })
+    ).toEqual({ image: "cover-b", title: "Next title" });
   });
 
-  it("bounds retained track artwork without time-based expiry", () => {
+  it("refreshes the current track only when explicitly forced", () => {
+    const frames = new FrozenNowPlayingKeyCache();
+    frames.select("key", "session:track", { image: "fallback", title: "Original title" });
+    expect(
+      frames.select("key", "session:track", { image: "cover-a", title: "Updated title" }, true)
+    ).toEqual({ image: "cover-a", title: "Updated title" });
+  });
+
+  it("keeps manual refreshes isolated to the pressed key", () => {
+    const frames = new FrozenNowPlayingKeyCache();
+    frames.select("first-key", "session:track", { image: "old", title: "Old title" });
+    frames.select("second-key", "session:track", { image: "old", title: "Old title" });
+    frames.select("first-key", "session:track", { image: "new", title: "New title" }, true);
+    expect(
+      frames.select("second-key", "session:track", { image: "new", title: "New title" })
+    ).toEqual({ image: "old", title: "Old title" });
+  });
+
+  it("bounds retained key snapshots without time-based expiry", () => {
     vi.useFakeTimers();
     try {
-      const artwork = new FrozenArtworkCache(2);
-      artwork.select("first", { image: "one", hasArtwork: true });
+      const frames = new FrozenNowPlayingKeyCache(2);
+      frames.select("first", "track", { image: "one", title: "One" });
       vi.advanceTimersByTime(24 * 60 * 60 * 1_000);
-      artwork.select("second", { image: "two", hasArtwork: true });
-      artwork.select("third", { image: "three", hasArtwork: true });
-      expect(artwork.select("first", { image: "one-new", hasArtwork: true })).toBe("one-new");
+      frames.select("second", "track", { image: "two", title: "Two" });
+      frames.select("third", "track", { image: "three", title: "Three" });
+      expect(frames.select("first", "track", { image: "one-new", title: "One new" })).toEqual({
+        image: "one-new",
+        title: "One new"
+      });
     } finally {
       vi.useRealTimers();
     }
   });
 
   it("rejects invalid capacities", () => {
-    expect(() => new FrozenArtworkCache(0)).toThrow(RangeError);
+    expect(() => new FrozenNowPlayingKeyCache(0)).toThrow(RangeError);
   });
 });
 
