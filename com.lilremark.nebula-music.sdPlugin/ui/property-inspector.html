@@ -8,40 +8,67 @@
       :root {
         color-scheme: dark;
         font:
-          13px -apple-system,
+          13px Inter,
+          -apple-system,
           BlinkMacSystemFont,
           "Segoe UI",
           sans-serif;
         --bg: #0a0a0a;
-        --panel: #171717;
-        --surface: #262626;
-        --border: #303030;
+        --panel: #111111;
+        --surface: #171717;
+        --elevated: #262626;
+        --border: #2a2a2a;
+        --border-strong: #3a3a3a;
         --text: #fafafa;
-        --muted: #a3a3a3;
-        --subtle: #737373;
-        --accent: #3b82c4;
+        --text-secondary: #d4d4d4;
+        --text-muted: #a3a3a3;
+        --text-subtle: #737373;
+        --accent: #06b6d4;
+        --accent-ink: #06222b;
+        --accent-soft: rgb(6 182 212 / 12%);
+        --accent-ring: rgb(6 182 212 / 26%);
+        --warning: #f59e0b;
       }
       * {
         box-sizing: border-box;
       }
       body {
         margin: 0;
-        padding: 12px;
+        padding: 14px;
         color: var(--text);
-        background: var(--bg);
+        background: radial-gradient(130% 100% at 50% 0%, #141414 0%, var(--bg) 55%);
+        -webkit-font-smoothing: antialiased;
       }
       .action-header {
-        margin-bottom: 12px;
-        padding: 5px 2px 14px;
+        margin-bottom: 14px;
+        padding: 6px 2px 16px;
         border-bottom: 1px solid var(--border);
       }
       .brand {
-        margin-bottom: 6px;
-        color: var(--subtle);
-        font-size: 9px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-bottom: 8px;
+        color: var(--text-muted);
+        font-size: 10px;
         font-weight: 750;
-        letter-spacing: 1.5px;
+        letter-spacing: 1.8px;
         text-transform: uppercase;
+      }
+      .brand-chip {
+        display: grid;
+        flex: 0 0 auto;
+        place-items: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 6px;
+        color: var(--accent-ink);
+        background: var(--accent);
+        box-shadow: 0 0 12px rgb(6 182 212 / 35%);
+      }
+      .brand-chip svg {
+        width: 13px;
+        height: 13px;
       }
       h1 {
         margin: 0;
@@ -51,32 +78,60 @@
       }
       .description {
         margin: 6px 0 0;
-        color: var(--muted);
-        font-size: 11px;
-        line-height: 1.45;
+        color: var(--text-muted);
+        font-size: 13px;
+        line-height: 1.5;
       }
-      section {
+      .panel {
         margin: 0 0 12px;
-        padding: 12px;
+        overflow: hidden;
         border: 1px solid var(--border);
-        border-radius: 8px;
+        border-radius: 10px;
         background: var(--panel);
       }
-      h2 {
-        margin: 0 0 10px;
-        color: #d4d4d4;
+      .panel-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border);
+        background: rgb(255 255 255 / 3%);
+      }
+      .panel-chip {
+        display: grid;
+        flex: 0 0 auto;
+        place-items: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 7px;
+        color: var(--accent);
+        background: var(--accent-soft);
+        box-shadow: inset 0 0 0 1px var(--accent-ring);
+      }
+      .panel-chip svg {
+        width: 13px;
+        height: 13px;
+      }
+      .panel h2 {
+        margin: 0;
+        color: var(--text-secondary);
         font-size: 10px;
         font-weight: 750;
-        letter-spacing: 1.2px;
+        letter-spacing: 1.4px;
         text-transform: uppercase;
+      }
+      .panel-body {
+        padding: 10px 12px 12px;
       }
       label {
         display: grid;
         gap: 6px;
-        margin: 10px 0 0;
-        color: #d4d4d4;
-        font-size: 11px;
-        font-weight: 600;
+        margin: 12px 0 0;
+        color: var(--text-muted);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.9px;
+        text-transform: uppercase;
       }
       label:first-of-type {
         margin-top: 0;
@@ -85,39 +140,51 @@
       select,
       button {
         width: 100%;
-        min-height: 32px;
-        border: 1px solid #404040;
-        border-radius: 6px;
+        min-height: 34px;
+        border: 1px solid var(--border-strong);
+        border-radius: 8px;
         color: var(--text);
-        background: var(--bg);
+        background: rgb(255 255 255 / 5%);
         font: inherit;
+        letter-spacing: 0;
+        text-transform: none;
       }
       input,
       select {
-        padding: 0 9px;
+        padding: 0 10px;
+      }
+      input::placeholder {
+        color: var(--text-subtle);
       }
       input:focus,
       select:focus,
       button:focus-visible {
-        outline: 2px solid rgb(59 130 196 / 45%);
-        outline-offset: 1px;
+        outline: none;
         border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-ring);
+      }
+      select option {
+        color: var(--text);
+        background: var(--surface);
       }
       button {
         cursor: pointer;
-        border-color: #f5f5f5;
-        color: #0a0a0a;
-        background: #f5f5f5;
-        font-weight: 650;
+        border-color: transparent;
+        color: var(--accent-ink);
+        background: var(--accent);
+        font-weight: 700;
       }
       button:hover {
         filter: brightness(1.08);
       }
       button.secondary {
-        border-color: #404040;
+        border-color: var(--border-strong);
         color: var(--text);
-        background: var(--surface);
+        background: rgb(255 255 255 / 8%);
         font-weight: 600;
+      }
+      button.secondary:hover {
+        background: rgb(255 255 255 / 13%);
       }
       .row {
         display: grid;
@@ -126,56 +193,63 @@
       }
       .row button {
         width: auto;
-        padding: 0 11px;
+        padding: 0 12px;
       }
       .status {
         display: flex;
-        gap: 8px;
         align-items: center;
-        min-height: 20px;
-        color: #e5e5e5;
-        font-weight: 600;
+        gap: 8px;
+        padding: 6px 10px;
+        border: 1px solid var(--border-strong);
+        border-radius: 999px;
+        background: rgb(255 255 255 / 4%);
+        color: var(--text-secondary);
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
       }
       .dot {
-        width: 8px;
-        height: 8px;
+        flex: 0 0 auto;
+        width: 7px;
+        height: 7px;
         border-radius: 50%;
-        background: #737373;
+        background: var(--text-subtle);
         box-shadow: 0 0 0 3px rgb(115 115 115 / 16%);
       }
       .dot.ok {
         background: var(--accent);
-        box-shadow: 0 0 0 3px rgb(59 130 196 / 18%);
+        box-shadow:
+          0 0 0 3px var(--accent-ring),
+          0 0 8px rgb(6 182 212 / 50%);
       }
       .dot.warn {
-        background: #f59e0b;
+        background: var(--warning);
         box-shadow: 0 0 0 3px rgb(245 158 11 / 16%);
       }
       .code {
-        margin: 11px 0;
-        padding: 10px 8px;
-        border: 1px solid rgb(59 130 196 / 40%);
-        border-radius: 7px;
+        margin: 12px 0;
+        padding: 13px 8px;
+        border: 1px solid var(--accent-ring);
+        border-radius: 10px;
         text-align: center;
-        background: var(--bg);
-        color: #d4d4d4;
-        font:
-          750 23px ui-monospace,
-          "SFMono-Regular",
-          Consolas,
-          monospace;
-        letter-spacing: 5px;
+        background: rgb(6 182 212 / 7%);
+        color: var(--text);
+        font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+        font-size: 24px;
+        font-weight: 750;
+        letter-spacing: 6px;
       }
       .hint {
-        margin: 9px 0 0;
-        color: var(--muted);
-        font-size: 10.5px;
-        line-height: 1.45;
+        margin: 10px 0 0;
+        color: var(--text-muted);
+        font-size: 13px;
+        line-height: 1.5;
       }
       .client {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
-        gap: 7px;
+        gap: 8px;
         align-items: center;
         margin-top: 8px;
         padding-top: 8px;
@@ -183,16 +257,16 @@
       }
       .client span {
         overflow: hidden;
-        color: #d4d4d4;
-        font-size: 10.5px;
+        color: var(--text-secondary);
+        font-size: 13px;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
       .client button {
         width: auto;
-        min-height: 27px;
-        padding: 0 9px;
-        font-size: 10px;
+        min-height: 28px;
+        padding: 0 10px;
+        font-size: 13px;
       }
       .hidden {
         display: none !important;
@@ -201,66 +275,125 @@
   </head>
   <body>
     <header class="action-header">
-      <div class="brand">Nebula Music</div>
+      <div class="brand">
+        <span class="brand-chip" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M9 18V5l12-2v13" />
+            <circle cx="6" cy="18" r="3" />
+            <circle cx="18" cy="16" r="3" />
+          </svg>
+        </span>
+        Nebula Music
+      </div>
       <h1 id="action-name">Action</h1>
       <p id="action-description" class="description"></p>
     </header>
 
-    <section id="action-settings" class="hidden">
-      <h2>Settings</h2>
-      <label id="playlist-setting" class="hidden">
-        Playlist
-        <select id="playlist"></select>
-      </label>
-      <label id="playback-setting" class="hidden">
-        Multi Action behavior
-        <select id="desired-state">
-          <option value="toggle">Toggle playback</option>
-          <option value="play">Always play</option>
-          <option value="pause">Always pause</option>
-        </select>
-      </label>
-      <label id="seek-setting" class="hidden">
-        Seconds per dial tick
-        <input id="seek-step" type="number" min="1" max="60" value="5" />
-      </label>
-      <label id="volume-setting" class="hidden">
-        Percent per dial tick
-        <input id="volume-step" type="number" min="1" max="20" value="2" />
-      </label>
-      <label id="tuning-target-setting" class="hidden">
-        Knob changes
-        <select id="tuning-target">
-          <option value="speed">Speed</option>
-          <option value="pitch">Pitch</option>
-          <option value="both">Speed and pitch</option>
-        </select>
-      </label>
+    <section id="action-settings" class="panel hidden">
+      <div class="panel-head">
+        <span class="panel-chip" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="4" y1="21" x2="4" y2="14" />
+            <line x1="4" y1="10" x2="4" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12" y2="3" />
+            <line x1="20" y1="21" x2="20" y2="16" />
+            <line x1="20" y1="12" x2="20" y2="3" />
+            <line x1="1" y1="14" x2="7" y2="14" />
+            <line x1="9" y1="8" x2="15" y2="8" />
+            <line x1="17" y1="16" x2="23" y2="16" />
+          </svg>
+        </span>
+        <h2>Settings</h2>
+      </div>
+      <div class="panel-body">
+        <label id="playlist-setting" class="hidden">
+          Playlist
+          <select id="playlist"></select>
+        </label>
+        <label id="playback-setting" class="hidden">
+          Multi Action behavior
+          <select id="desired-state">
+            <option value="toggle">Toggle playback</option>
+            <option value="play">Always play</option>
+            <option value="pause">Always pause</option>
+          </select>
+        </label>
+        <label id="seek-setting" class="hidden">
+          Seconds per dial tick
+          <input id="seek-step" type="number" min="1" max="60" value="5" />
+        </label>
+        <label id="volume-setting" class="hidden">
+          Percent per dial tick
+          <input id="volume-step" type="number" min="1" max="20" value="2" />
+        </label>
+        <label id="tuning-target-setting" class="hidden">
+          Knob changes
+          <select id="tuning-target">
+            <option value="speed">Speed</option>
+            <option value="pitch">Pitch</option>
+            <option value="both">Speed and pitch</option>
+          </select>
+        </label>
+      </div>
     </section>
 
-    <section id="connection-settings" class="hidden">
-      <h2>Browser connection</h2>
-      <div class="status"><span id="dot" class="dot"></span><span id="status">Starting…</span></div>
-      <div id="pairing-code" class="code hidden"></div>
-      <button id="pair">Generate pairing code</button>
-      <p class="hint">
-        Enter the one-time code in Nebula Music → Settings → Stream Deck. It expires after five
-        minutes.
-      </p>
-      <label>
-        Loopback port
-        <div class="row">
-          <input id="port" type="number" min="1024" max="65525" value="37921" />
-          <button id="save-port" class="secondary">Apply</button>
+    <section id="connection-settings" class="panel hidden">
+      <div class="panel-head">
+        <span class="panel-chip" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+          </svg>
+        </span>
+        <h2>Browser connection</h2>
+      </div>
+      <div class="panel-body">
+        <div class="status">
+          <span id="dot" class="dot"></span><span id="status">Starting…</span>
         </div>
-      </label>
-      <label>
-        Controlled tab
-        <select id="instance">
-          <option value="">Automatic</option>
-        </select>
-      </label>
-      <div id="clients"></div>
+        <div id="pairing-code" class="code hidden"></div>
+        <button id="pair">Generate pairing code</button>
+        <p class="hint">
+          Enter the one-time code in Nebula Music → Settings → Stream Deck. It expires after five
+          minutes.
+        </p>
+        <label>
+          Loopback port
+          <div class="row">
+            <input id="port" type="number" min="1024" max="65525" value="37921" />
+            <button id="save-port" class="secondary">Apply</button>
+          </div>
+        </label>
+        <label>
+          Controlled tab
+          <select id="instance">
+            <option value="">Automatic</option>
+          </select>
+        </label>
+        <div id="clients"></div>
+      </div>
     </section>
 
     <script>

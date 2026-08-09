@@ -16,7 +16,7 @@
       "type": "text",
       "rect": [104, 7, 88, 14],
       "alignment": "right",
-      "color": "#3b82c4",
+      "color": "#06b6d4",
       "font": { "size": 9, "weight": 700 }
     },
     {
@@ -41,7 +41,7 @@
       "rect": [8, 87, 184, 5],
       "range": { "min": 0, "max": 100 },
       "bar_bg_c": "#262626",
-      "bar_fill_c": "#3b82c4",
+      "bar_fill_c": "#06b6d4",
       "bar_border_c": "#262626",
       "bar_h": 4,
       "border_w": 0,

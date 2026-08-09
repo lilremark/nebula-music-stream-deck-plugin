@@ -23,7 +23,7 @@ const previewArtwork = `data:image/svg+xml;base64,${Buffer.from(
   `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
     <rect width="400" height="400" fill="#f5f5f5"/>
     <path d="M0 292 102 173l83 68 78-142 137 82v219H0z" fill="#111"/>
-    <circle cx="250" cy="107" r="88" fill="#3b82c4"/>
+    <circle cx="250" cy="107" r="88" fill="#06b6d4"/>
     <circle cx="117" cy="157" r="62" fill="#2f75ad"/>
     <path d="M66 333h268" stroke="#f5f5f5" stroke-width="8"/>
     <text x="200" y="366" text-anchor="middle" font-family="Arial,sans-serif" font-size="35" font-weight="800" fill="#f5f5f5">THE LAST OF</text>
@@ -112,13 +112,13 @@ const nowPlayingDial = Buffer.from(
     <rect width="100" height="100" fill="#0a0a0a"/>
     <rect x="100" width="100" height="100" fill="#0a0a0a"/>
     <text x="8" y="17" font-family="Arial,sans-serif" font-size="9" font-weight="700" fill="#737373">NOW PLAYING</text>
-    <text x="192" y="17" text-anchor="end" font-family="Arial,sans-serif" font-size="9" font-weight="700" fill="#3b82c4">PLAYING</text>
+    <text x="192" y="17" text-anchor="end" font-family="Arial,sans-serif" font-size="9" font-weight="700" fill="#06b6d4">PLAYING</text>
     <text x="8" y="43" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#fafafa">${dialTitle}</text>
     <text x="8" y="61" font-family="Arial,sans-serif" font-size="10" font-weight="600" fill="#d4d4d4">${dialArtist}</text>
     <text x="8" y="76" font-family="Arial,sans-serif" font-size="9" fill="#737373">${dialAlbum}</text>
     <text x="8" y="92" font-family="Arial,sans-serif" font-size="8" font-weight="600" fill="#a3a3a3">3:24 / 5:47</text>
     <rect x="80" y="87" width="112" height="4" rx="2" fill="#262626"/>
-    <rect x="80" y="87" width="66" height="4" rx="2" fill="#3b82c4"/>
+    <rect x="80" y="87" width="66" height="4" rx="2" fill="#06b6d4"/>
   </svg>`
 );
 const volumeDial = dialSvg({
@@ -158,11 +158,11 @@ function dialSvg({ label, status, sublabel, leftValue, hint, progress = 0 }) {
     `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100">
       <rect width="200" height="100" fill="#0a0a0a"/>
       <text x="8" y="17" font-family="Arial,sans-serif" font-size="9" font-weight="700" fill="#737373">${escapeXml(label)}</text>
-      <text x="192" y="17" text-anchor="end" font-family="Arial,sans-serif" font-size="9" font-weight="700" fill="#3b82c4">${escapeXml(status)}</text>
+      <text x="192" y="17" text-anchor="end" font-family="Arial,sans-serif" font-size="9" font-weight="700" fill="#06b6d4">${escapeXml(status)}</text>
       ${sublabel ? `<text x="8" y="41" font-family="Arial,sans-serif" font-size="9" font-weight="600" fill="#a3a3a3">${escapeXml(sublabel)}</text>` : ""}
       <text x="8" y="${sublabel ? 68 : 61}" font-family="Arial,sans-serif" font-size="${sublabel ? 19 : 30}" font-weight="700" fill="#fafafa">${escapeXml(leftValue)}</text>
       <text x="100" y="80" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" font-weight="700" fill="#737373">${escapeXml(hint)}</text>
-      ${progress ? `<rect x="8" y="87" width="184" height="4" rx="2" fill="#262626"/><rect x="8" y="87" width="${progressWidth}" height="4" rx="2" fill="#3b82c4"/>` : ""}
+      ${progress ? `<rect x="8" y="87" width="184" height="4" rx="2" fill="#262626"/><rect x="8" y="87" width="${progressWidth}" height="4" rx="2" fill="#06b6d4"/>` : ""}
     </svg>`
   );
 }
@@ -172,7 +172,7 @@ function dualValueDial() {
     `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100">
       <rect width="200" height="100" fill="#0a0a0a"/>
       <text x="8" y="17" font-family="Arial,sans-serif" font-size="9" font-weight="700" fill="#737373">SPEED &amp; PITCH</text>
-      <text x="192" y="17" text-anchor="end" font-family="Arial,sans-serif" font-size="9" font-weight="700" fill="#3b82c4">DIGITAL</text>
+      <text x="192" y="17" text-anchor="end" font-family="Arial,sans-serif" font-size="9" font-weight="700" fill="#06b6d4">DIGITAL</text>
       <text x="8" y="41" font-family="Arial,sans-serif" font-size="9" font-weight="600" fill="#a3a3a3">SPEED</text>
       <text x="192" y="41" text-anchor="end" font-family="Arial,sans-serif" font-size="9" font-weight="600" fill="#a3a3a3">PITCH</text>
       <text x="8" y="68" font-family="Arial,sans-serif" font-size="22" font-weight="700" fill="#fafafa">1.2×</text>
