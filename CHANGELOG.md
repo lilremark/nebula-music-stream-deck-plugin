@@ -7,6 +7,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.1.5] - 2026-08-09
+
+### Changed
+
+- Styled the property inspector and Stream Deck+ dial layouts to match the Nebula Music visual
+  language, without changing any behavior.
+- Now Playing keys keep their artwork and metadata until a new track starts; pressing the key
+  refreshes them immediately, while the dial keeps showing live playback progress.
+
+### Fixed
+
+- Show the new track's album artwork again when it arrives right after the track starts.
+- Stop periodic check-ins from repainting the Now Playing key.
+
 ## [1.1.4] - 2026-07-24
 
 ### Changed
@@ -95,7 +109,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Keep Subsonic credentials, authenticated artwork URLs, queues, pairing secrets, and media
   metadata out of plugin logs.
 
-[Unreleased]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.1.4...HEAD
+[Unreleased]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.1.5...HEAD
+[1.1.5]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.1.4...v1.1.5
 [1.1.4]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.1.3...v1.1.4
 [1.1.3]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/lilremark/nebula-music-stream-deck-plugin/compare/v1.1.1...v1.1.2

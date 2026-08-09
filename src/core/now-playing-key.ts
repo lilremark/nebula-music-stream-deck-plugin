@@ -1,6 +1,7 @@
 export interface NowPlayingKeyFrame {
   image: string;
   title: string;
+  hasArtwork: boolean;
 }
 
 interface FrozenFrame {
@@ -24,10 +25,19 @@ export class FrozenNowPlayingKeyCache {
     forceRefresh = false
   ): NowPlayingKeyFrame {
     const previous = this.#entries.get(contextId);
-    const selected =
-      !previous || previous.trackKey !== trackKey || forceRefresh
-        ? { trackKey, frame: candidate }
-        : previous;
+    let selected: FrozenFrame;
+    if (!previous || previous.trackKey !== trackKey || forceRefresh) {
+      selected = { trackKey, frame: candidate };
+    } else if (!previous.frame.hasArtwork && candidate.hasArtwork) {
+      // Nebula sends the track metadata before its artwork finishes loading. Upgrade the frozen
+      // frame's image so a late-arriving cover replaces the placeholder without touching metadata.
+      selected = {
+        trackKey,
+        frame: { ...previous.frame, image: candidate.image, hasArtwork: true }
+      };
+    } else {
+      selected = previous;
+    }
 
     this.#entries.delete(contextId);
     this.#entries.set(contextId, selected);

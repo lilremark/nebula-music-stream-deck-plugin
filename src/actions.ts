@@ -246,9 +246,17 @@ export class NowPlayingAction extends ResponsiveAction {
     void this.requestRefresh(event.action, "state");
   }
 
+  override onWillDisappear(event: WillDisappearEvent): void {
+    this.#manualRefreshes.delete(event.action.id);
+    super.onWillDisappear(event);
+  }
+
   override onDialDown(event: DialDownEvent): void {
     const command = nowPlayingPressCommand("dial");
-    if (command) this.execute(event.action, command);
+    if (!command) return;
+    this.execute(event.action, command);
+    this.#manualRefreshes.add(event.action.id);
+    void this.requestRefresh(event.action, "state");
   }
 
   override onDialRotate(event: DialRotateEvent<CommonSettings>): void {
@@ -258,14 +266,16 @@ export class NowPlayingAction extends ResponsiveAction {
     if (seconds === 0) return;
     if (!this.service.supportsActiveCapability("seekAbsolute")) {
       this.execute(event.action, { name: "seekRelative", seconds });
-      return;
+    } else {
+      const position = clamp(snapshot.positionSeconds + seconds, 0, snapshot.durationSeconds);
+      this.executeLatest(event.action, "seek", {
+        name: "seekAbsolute",
+        seconds: position,
+        trackId: snapshot.track.id
+      });
     }
-    const position = clamp(snapshot.positionSeconds + seconds, 0, snapshot.durationSeconds);
-    this.executeLatest(event.action, "seek", {
-      name: "seekAbsolute",
-      seconds: position,
-      trackId: snapshot.track.id
-    });
+    this.#manualRefreshes.add(event.action.id);
+    void this.requestRefresh(event.action, "state");
   }
 
   override onTouchTap(event: TouchTapEvent): void {
@@ -277,20 +287,22 @@ export class NowPlayingAction extends ResponsiveAction {
         name: "seekRelative",
         seconds: position - snapshot.positionSeconds
       });
-      return;
+    } else {
+      this.executeLatest(event.action, "seek", {
+        name: "seekAbsolute",
+        seconds: position,
+        trackId: snapshot.track.id
+      });
     }
-    this.executeLatest(event.action, "seek", {
-      name: "seekAbsolute",
-      seconds: position,
-      trackId: snapshot.track.id
-    });
+    this.#manualRefreshes.add(event.action.id);
+    void this.requestRefresh(event.action, "state");
   }
 
   protected override shouldRefresh(kind: ServiceChangeKind): boolean {
     return kind === "state" || kind === "progress";
   }
 
-  protected override async refresh(target: Action, kind: ServiceChangeKind): Promise<void> {
+  protected override async refresh(target: Action): Promise<void> {
     const snapshot = this.service.snapshot;
     if (target.isKey()) {
       const trackKey = snapshot?.track
@@ -301,7 +313,8 @@ export class NowPlayingAction extends ResponsiveAction {
         trackKey,
         {
           image: nowPlayingKeyImage(snapshot),
-          title: staticKeyMetadataTitle(snapshot?.track ?? undefined)
+          title: staticKeyMetadataTitle(snapshot?.track ?? undefined),
+          hasArtwork: Boolean(snapshot?.track?.artworkDataUrl)
         },
         this.#manualRefreshes.delete(target.id)
       );
@@ -310,8 +323,9 @@ export class NowPlayingAction extends ResponsiveAction {
       return;
     }
     if (target.isDial()) {
+      this.#manualRefreshes.delete(target.id);
       const track = snapshot?.track;
-      const progress = {
+      const feedback: Record<string, string | number> = {
         state: snapshot?.playing ? "PLAYING" : "PAUSED",
         time: snapshot
           ? `${formatTime(snapshot.positionSeconds)} / ${formatTime(snapshot.durationSeconds)}`
@@ -319,19 +333,12 @@ export class NowPlayingAction extends ResponsiveAction {
         progress:
           snapshot && snapshot.durationSeconds > 0
             ? Math.round((snapshot.positionSeconds / snapshot.durationSeconds) * 100)
-            : 0
+            : 0,
+        trackTitle: track?.title ?? "Nothing playing",
+        artist: track?.artist ?? "",
+        album: track?.album ?? ""
       };
-      await this.setFeedback(
-        target,
-        kind === "progress"
-          ? progress
-          : {
-              ...progress,
-              trackTitle: track?.title ?? "Nothing playing",
-              artist: track?.artist ?? "",
-              album: track?.album ?? ""
-            }
-      );
+      await this.setFeedback(target, feedback);
     }
   }
 }
