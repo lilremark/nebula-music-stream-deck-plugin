@@ -391,46 +391,107 @@ describe("Now Playing key snapshots", () => {
   it("freezes artwork and metadata until the track changes", () => {
     const frames = new FrozenNowPlayingKeyCache();
     expect(
-      frames.select("key", "session:track", { image: "fallback", title: "Original title" })
-    ).toEqual({ image: "fallback", title: "Original title" });
+      frames.select("key", "session:track", {
+        image: "cover-a",
+        title: "Original title",
+        hasArtwork: true
+      })
+    ).toEqual({ image: "cover-a", title: "Original title", hasArtwork: true });
     expect(
-      frames.select("key", "session:track", { image: "cover-a", title: "Edited title" })
-    ).toEqual({ image: "fallback", title: "Original title" });
+      frames.select("key", "session:track", {
+        image: "cover-b",
+        title: "Edited title",
+        hasArtwork: true
+      })
+    ).toEqual({ image: "cover-a", title: "Original title", hasArtwork: true });
     expect(
-      frames.select("key", "session:next-track", { image: "cover-b", title: "Next title" })
-    ).toEqual({ image: "cover-b", title: "Next title" });
+      frames.select("key", "session:next-track", {
+        image: "cover-c",
+        title: "Next title",
+        hasArtwork: true
+      })
+    ).toEqual({ image: "cover-c", title: "Next title", hasArtwork: true });
+  });
+
+  it("upgrades a placeholder to late-arriving artwork without touching metadata", () => {
+    const frames = new FrozenNowPlayingKeyCache();
+    frames.select("key", "session:track", {
+      image: "fallback",
+      title: "Original title",
+      hasArtwork: false
+    });
+    const upgraded = frames.select("key", "session:track", {
+      image: "cover-a",
+      title: "Edited title",
+      hasArtwork: true
+    });
+    expect(upgraded.image).toBe("cover-a");
+    expect(upgraded.title).toBe("Original title");
+    expect(upgraded.hasArtwork).toBe(true);
+    expect(
+      frames.select("key", "session:track", {
+        image: "cover-b",
+        title: "Edited again",
+        hasArtwork: true
+      })
+    ).toEqual({ image: "cover-a", title: "Original title", hasArtwork: true });
   });
 
   it("refreshes the current track only when explicitly forced", () => {
     const frames = new FrozenNowPlayingKeyCache();
-    frames.select("key", "session:track", { image: "fallback", title: "Original title" });
+    frames.select("key", "session:track", {
+      image: "fallback",
+      title: "Original title",
+      hasArtwork: false
+    });
     expect(
-      frames.select("key", "session:track", { image: "cover-a", title: "Updated title" }, true)
-    ).toEqual({ image: "cover-a", title: "Updated title" });
+      frames.select(
+        "key",
+        "session:track",
+        { image: "cover-a", title: "Updated title", hasArtwork: true },
+        true
+      )
+    ).toEqual({ image: "cover-a", title: "Updated title", hasArtwork: true });
   });
 
   it("keeps manual refreshes isolated to the pressed key", () => {
     const frames = new FrozenNowPlayingKeyCache();
-    frames.select("first-key", "session:track", { image: "old", title: "Old title" });
-    frames.select("second-key", "session:track", { image: "old", title: "Old title" });
-    frames.select("first-key", "session:track", { image: "new", title: "New title" }, true);
+    frames.select("first-key", "session:track", {
+      image: "old",
+      title: "Old title",
+      hasArtwork: false
+    });
+    frames.select("second-key", "session:track", {
+      image: "old",
+      title: "Old title",
+      hasArtwork: false
+    });
+    frames.select(
+      "first-key",
+      "session:track",
+      { image: "new", title: "New title", hasArtwork: false },
+      true
+    );
     expect(
-      frames.select("second-key", "session:track", { image: "new", title: "New title" })
-    ).toEqual({ image: "old", title: "Old title" });
+      frames.select("second-key", "session:track", {
+        image: "new",
+        title: "New title",
+        hasArtwork: false
+      })
+    ).toEqual({ image: "old", title: "Old title", hasArtwork: false });
   });
 
   it("bounds retained key snapshots without time-based expiry", () => {
     vi.useFakeTimers();
     try {
       const frames = new FrozenNowPlayingKeyCache(2);
-      frames.select("first", "track", { image: "one", title: "One" });
+      frames.select("first", "track", { image: "one", title: "One", hasArtwork: false });
       vi.advanceTimersByTime(24 * 60 * 60 * 1_000);
-      frames.select("second", "track", { image: "two", title: "Two" });
-      frames.select("third", "track", { image: "three", title: "Three" });
-      expect(frames.select("first", "track", { image: "one-new", title: "One new" })).toEqual({
-        image: "one-new",
-        title: "One new"
-      });
+      frames.select("second", "track", { image: "two", title: "Two", hasArtwork: false });
+      frames.select("third", "track", { image: "three", title: "Three", hasArtwork: false });
+      expect(
+        frames.select("first", "track", { image: "one-new", title: "One new", hasArtwork: true })
+      ).toEqual({ image: "one-new", title: "One new", hasArtwork: true });
     } finally {
       vi.useRealTimers();
     }
